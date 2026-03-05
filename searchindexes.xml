@@ -3,7 +3,24 @@
 两种安装方式 OpenResty 的安装主要有两条路：包管理器安装和源码编译。对于学习阶段来说，包管理器安装就够了，速度快、省心。源码编译适合生产环境需要定制模块的场景，这篇先不展开。
 另外还有一种方式是 Docker，适合不想污染本机环境、或者系统不方便装软件的情况，后面单独讲。
 用包管理器安装（推荐） OpenResty 官方提供了预编译的包，支持主流 Linux 发行版。
-Ubuntu / Debian # 安装依赖 sudo apt-get install -y lsb-release curl # 添加 OpenResty 官方 APT 源 curl -fsSL https://openresty.org/package/pubkey.gpg | sudo gpg --dearmor -o /usr/share/keyrings/openresty.gpg echo &amp;amp;#34;deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/openresty.gpg] http://openresty.org/package/ubuntu $(lsb_release -sc) main&amp;amp;#34; \ | sudo tee /etc/apt/sources.list.d/openresty.list &amp;amp;gt; /dev/null # 更新并安装 sudo apt-get update sudo apt-get install -y openresty CentOS / RHEL # 添加 OpenResty YUM 源 sudo yum install -y yum-utils sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo # 安装 sudo yum install -y openresty 安装完成后，验证一下是否成功： …</content></entry><entry><title>01 | OpenResty 是什么</title><url>/blog/openresty-01-what-is-openresty/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Nginx</tag><tag>Lua</tag></tags><content type="html"><![CDATA[  如果你刚刚接触 OpenResty，可能会有一个疑问：这东西到底是什么？是服务器？是框架？还是某种编程语言？
+Ubuntu / Debian # 安装依赖 sudo apt-get install -y lsb-release curl # 添加 OpenResty 官方 APT 源 curl -fsSL https://openresty.org/package/pubkey.gpg | sudo gpg --dearmor -o /usr/share/keyrings/openresty.gpg echo &amp;amp;#34;deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/openresty.gpg] http://openresty.org/package/ubuntu $(lsb_release -sc) main&amp;amp;#34; \ | sudo tee /etc/apt/sources.list.d/openresty.list &amp;amp;gt; /dev/null # 更新并安装 sudo apt-get update sudo apt-get install -y openresty CentOS / RHEL # 添加 OpenResty YUM 源 sudo yum install -y yum-utils sudo yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo # 安装 sudo yum install -y openresty 安装完成后，验证一下是否成功： …</content></entry><entry><title>慢下来，才能感觉到</title><url>/life/slow-down-and-feel/</url><categories><category>生活点滴</category></categories><tags><tag>随笔</tag><tag>感悟</tag></tags><content type="html"><![CDATA[  今天早上出门，比平时晚了十分钟。
+不是闹钟没响，也不是赖床，就是莫名其妙地在窗边站了一会儿，看着楼下的早市收摊，看着送外卖的小哥把车停在路边，低头翻着手机确认地址，看着对面楼的窗户一扇一扇亮起来。
+就站了大概五分钟，什么都没做。
+结果发现，那五分钟比我过去很多个早上都要清醒。
+我不太确定从什么时候开始，生活变成了一种需要&quot;完成&quot;的事情。
+起床、洗漱、吃饭、上班，每一步都是在和时间赛跑。手机里永远有没读完的消息，待办清单永远比能做完的事情多。哪怕是下班之后的休息，也常常是带着某种隐隐的焦虑——&ldquo;我是不是应该学点什么&rdquo;、&ldquo;这段时间是不是虚度了&rdquo;。
+效率成了一种习惯，甚至变成了一种道德绑架。
+不够快，不够满，不够有用，就会觉得不安。
+但人不是机器。
+机器运转是为了输出，跑得越快越好，越稳越好。人活着却不只是为了输出。那些在等公交时随手拍的一张光影，和老朋友聊到半夜的一段废话，一个人走路时脑子里突然冒出来的奇怪念头——这些东西没有 KPI，没有回报，但它们才是生活里真正有质地的部分。
+很多东西只有慢下来才能感觉到。
+快步走过一条街，你记住的是目的地。慢慢走一遍，你会注意到拐角那家饺子馆的幌子已经褪色了，会注意到路边有棵树不知道什么时候开始长了一块奇怪的疤，会注意到有一户人家的窗台上摆着一盆长歪了的多肉，歪得很有个性。
+这些细节没什么用。但它们让你觉得你真实地存在过，在那个时间，在那个地方。
+我没有什么解决办法，也不打算给&quot;慢生活&quot;唱赞歌——那听起来像是一种消费主义包装出来的人设。
+我只是想记住今天早上那五分钟。
+窗外的光是斜的，还带着点冬末的凉意。楼下有人在喊&quot;豆腐脑，豆腐脑&quot;，声音拉得很长，懒洋洋的。
+什么都没发生，但好像什么都有了。
+  ]]></content></entry><entry><title>01 | OpenResty 是什么</title><url>/blog/openresty-01-what-is-openresty/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Nginx</tag><tag>Lua</tag></tags><content type="html"><![CDATA[  如果你刚刚接触 OpenResty，可能会有一个疑问：这东西到底是什么？是服务器？是框架？还是某种编程语言？
 这篇文章的目的就是帮你从零建立对 OpenResty 的基本认知，不需要任何技术背景，读完之后你就能清楚地说出&amp;quot;OpenResty 是什么、能做什么、适合什么场景&amp;quot;。
 从一个生活场景说起 想象一下你去一家大型商场。商场的大门有一个保安，负责检查每一个进来的人：有没有携带危险物品、是不是会员、今天有没有特别活动限制入场。
 但这个保安不是商场自己设计的那种&amp;quot;只能说你好欢迎光临&amp;quot;的普通保安，而是一个经过特殊培训的&amp;quot;智能保安&amp;quot;——他可以查数据库、打电话确认身份、根据当天的规则灵活处理各种情况，处理完之后再决定放不放行、放行去哪里。
