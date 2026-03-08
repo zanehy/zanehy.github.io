@@ -1,4 +1,12 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>03 | OpenResty 执行生命周期</title><url>/blog/openresty-03-lifecycle/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Nginx</tag><tag>Lua</tag></tags><content type="html"><![CDATA[  上一篇我们搭好了环境，跑通了第一个 Hello World。但当时埋了一个伏笔——content_by_lua_block 里的 content 到底是什么意思？为什么不叫 run_lua_block 或者 exec_lua_block？
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>04 | Lua 数据类型与变量</title><url>/blog/openresty-04-lua-types/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Lua</tag></tags><content type="html"><![CDATA[  上一篇我们搞清楚了 OpenResty 的执行生命周期，知道了每个阶段能做什么事情。从这篇开始，我们进入第二阶段：Lua 语言基础。
+很多人问：学 OpenResty 必须先精通 Lua 吗？答案是不必要。Lua 是一门很小的语言，核心语法十分钟就能扫完。但有几个地方如果不搞清楚，后面写代码会踩很多坑。这篇文章就专门讲这些基础但重要的东西。
+Lua 只有六种数据类型 很多编程语言有几十种数据类型，而 Lua 只有六种：
+类型 说明 nil 空值，表示&amp;quot;不存在&amp;quot; boolean 布尔值，true 或 false number 数字（整数和浮点数统一用这个） string 字符串 table 表，Lua 最核心的数据结构 function 函数也是一种值 这六种类型就是 Lua 的全部。简单是 Lua 的设计哲学，也是它能嵌入 OpenResty 这种高性能系统的原因之一。
+用 type() 函数可以查看一个值的类型，返回的是类型名称字符串：
+print(type(nil)) -- nil print(type(true)) -- boolean print(type(42)) -- number print(type(3.14)) -- number print(type(&amp;#34;hello&amp;#34;)) -- string print(type({})) -- table print(type(print)) -- function 记住这个函数，后面判断类型时会经常用到。
+nil：不存在就是 nil nil 在 Lua 里表示&amp;quot;什么都没有&amp;quot;。一个变量如果没有赋值，它的值就是 nil；把一个变量设置为 nil，相当于删除这个变量。
+local x print(x) -- nil，未赋值的变量默认是 nil local t = {a = 1, b = 2} t.b = nil -- 把 t.b 从 table 里删掉 print(t.b) -- nil 在 OpenResty 里，nil 经常出现在&amp;quot;取不到值&amp;quot;的场景。比如从 Redis 查一个不存在的 key，返回的就是 nil：
+local res, err = red:get(&amp;#34;nonexistent_key&amp;#34;) if res == …  ]]></content></entry><entry><title>03 | OpenResty 执行生命周期</title><url>/blog/openresty-03-lifecycle/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Nginx</tag><tag>Lua</tag></tags><content type="html"><![CDATA[  上一篇我们搭好了环境，跑通了第一个 Hello World。但当时埋了一个伏笔——content_by_lua_block 里的 content 到底是什么意思？为什么不叫 run_lua_block 或者 exec_lua_block？
 这篇文章就来解答这个问题。搞懂 OpenResty 的执行生命周期，是真正理解 OpenResty 编程模型的关键一步。
 从一个比喻开始 把处理一个 HTTP 请求想象成在餐厅点餐的全过程。
 顾客（客户端）走进餐厅，服务员（Nginx）接待。整个流程大致是：门口迎宾检查着装 → 带位 → 点单 → 后厨做菜 → 上菜 → 结账离开 → 收拾桌子写日志。
