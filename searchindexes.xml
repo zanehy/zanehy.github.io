@@ -1,4 +1,12 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>04 | Lua 数据类型与变量</title><url>/blog/openresty-04-lua-types/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Lua</tag></tags><content type="html"><![CDATA[  上一篇我们搞清楚了 OpenResty 的执行生命周期，知道了每个阶段能做什么事情。从这篇开始，我们进入第二阶段：Lua 语言基础。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>05 | Lua 流程控制与函数</title><url>/blog/openresty-05-lua-control-flow/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Lua</tag></tags><content type="html"><![CDATA[  上一篇我们把 Lua 的六种数据类型摸了个遍。有了数据，下一步自然是：怎么用代码控制这些数据的流向？
+这篇文章讲 Lua 的流程控制和函数系统。内容不多，但有几个地方和主流语言不太一样，如果不注意，写出来的代码虽然能跑，但很可能埋着隐患。
+if / elseif / else：条件判断 Lua 的 if 语法和大多数语言差不多，但有两点值得注意：用 then 和 end 包围，不用花括号。
+local score = 85 if score &amp;gt;= 90 then print(&amp;#34;优秀&amp;#34;) elseif score &amp;gt;= 60 then print(&amp;#34;及格&amp;#34;) else print(&amp;#34;不及格&amp;#34;) end 多条件分支用 elseif（注意是一个词，不是 else if）。
+在 OpenResty 里，条件判断随处可见，比如根据请求方法分流处理：
+local method = ngx.req.get_method() if method == &amp;#34;GET&amp;#34; then handle_get() elseif method == &amp;#34;POST&amp;#34; then ngx.req.read_body() handle_post() else ngx.exit(405) -- Method Not Allowed end 回忆上一篇说的：只有 nil 和 false 是假。所以判断一个值是否存在，直接 if val then 就够了，不需要写 if val ~= nil then（虽然两者等价）：
+local token = ngx.req.get_headers()[&amp;#34;Authorization&amp;#34;] if token then -- token 存在，继续处理 else ngx.exit(401) end for 循环：两种完全不同的写法 Lua 的 for 有两种形式，用途完全不同，不要混用。
+数值 for（numeric for） 适合按数字步长遍历：
+-- 从 1 到 5，步长 1 for i = 1, 5 do print(i) -- 1 2 3 4 5 end -- 从 10 到 1，步长 -2（倒序） for i = 10, 1, -2 do print(i) -- 10 …  ]]></content></entry><entry><title>04 | Lua 数据类型与变量</title><url>/blog/openresty-04-lua-types/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Lua</tag></tags><content type="html"><![CDATA[  上一篇我们搞清楚了 OpenResty 的执行生命周期，知道了每个阶段能做什么事情。从这篇开始，我们进入第二阶段：Lua 语言基础。
 很多人问：学 OpenResty 必须先精通 Lua 吗？答案是不必要。Lua 是一门很小的语言，核心语法十分钟就能扫完。但有几个地方如果不搞清楚，后面写代码会踩很多坑。这篇文章就专门讲这些基础但重要的东西。
 Lua 只有六种数据类型 很多编程语言有几十种数据类型，而 Lua 只有六种：
 类型 说明 nil 空值，表示&amp;quot;不存在&amp;quot; boolean 布尔值，true 或 false number 数字（整数和浮点数统一用这个） string 字符串 table 表，Lua 最核心的数据结构 function 函数也是一种值 这六种类型就是 Lua 的全部。简单是 Lua 的设计哲学，也是它能嵌入 OpenResty 这种高性能系统的原因之一。
