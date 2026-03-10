@@ -1,4 +1,11 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>05 | Lua 流程控制与函数</title><url>/blog/openresty-05-lua-control-flow/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Lua</tag></tags><content type="html"><![CDATA[  上一篇我们把 Lua 的六种数据类型摸了个遍。有了数据，下一步自然是：怎么用代码控制这些数据的流向？
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>06 | Lua Table 深度解析</title><url>/blog/openresty-06-lua-table/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Lua</tag><tag>table</tag><tag>元表</tag></tags><content type="html"><![CDATA[  在前两篇文章里，我们把 Lua 的数据类型和流程控制都梳理了一遍。但有一个类型只是顺带提了一下——table。
+这篇文章专门来聊它，因为 table 在 Lua 里的地位实在特殊：它是 Lua 里唯一的数据结构。数组是它，字典是它，模块是它，对象也是它。搞懂 table，相当于搞懂了 Lua 的半壁江山。
+table 的双重身份 Lua 里没有内置的&amp;quot;数组类型&amp;quot;或&amp;quot;字典类型&amp;quot;，只有一个 table，但它能同时扮演这两个角色。
+作为数组 local fruits = {&amp;#34;apple&amp;#34;, &amp;#34;banana&amp;#34;, &amp;#34;orange&amp;#34;} print(fruits[1]) -- apple（注意：Lua 数组下标从 1 开始！） print(fruits[2]) -- banana print(#fruits) -- 3（# 获取长度） -- 遍历数组 for i, v in ipairs(fruits) do print(i, v) end 注意那个 [1]——Lua 的数组下标从 1 开始，不是 0。这是很多从 C / Python / JavaScript 转过来的开发者最先踩的坑。
+ipairs 是专门用来遍历数组部分的迭代器，它从下标 1 开始，遇到第一个 nil 就停下来。
+作为字典 local config = { host = &amp;#34;127.0.0.1&amp;#34;, port = 6379, timeout = 1000, } print(config[&amp;#34;host&amp;#34;]) -- 127.0.0.1 print(config.port) -- 6379（两种写法等价） -- 遍历字典 for k, v in pairs(config) do print(k, v) end pairs 遍历 table 里所有的键值对，包括数组部分和字典部分，但顺序不固定。
+同时作为两种 table 完全可以既有数组部分又有字典部分：
+local user = { &amp;#34;alice&amp;#34;, -- [1] &amp;#34;bob&amp;#34;, -- [2] name = &amp;#34;alice&amp;#34;, age = 28, } print(user[1]) -- alice …  ]]></content></entry><entry><title>05 | Lua 流程控制与函数</title><url>/blog/openresty-05-lua-control-flow/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Lua</tag></tags><content type="html"><![CDATA[  上一篇我们把 Lua 的六种数据类型摸了个遍。有了数据，下一步自然是：怎么用代码控制这些数据的流向？
 这篇文章讲 Lua 的流程控制和函数系统。内容不多，但有几个地方和主流语言不太一样，如果不注意，写出来的代码虽然能跑，但很可能埋着隐患。
 if / elseif / else：条件判断 Lua 的 if 语法和大多数语言差不多，但有两点值得注意：用 then 和 end 包围，不用花括号。
 local score = 85 if score &amp;gt;= 90 then print(&amp;#34;优秀&amp;#34;) elseif score &amp;gt;= 60 then print(&amp;#34;及格&amp;#34;) else print(&amp;#34;不及格&amp;#34;) end 多条件分支用 elseif（注意是一个词，不是 else if）。
