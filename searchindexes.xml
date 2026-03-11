@@ -5,7 +5,13 @@ table 的双重身份 Lua 里没有内置的&amp;quot;数组类型&amp;quot;或&
 ipairs 是专门用来遍历数组部分的迭代器，它从下标 1 开始，遇到第一个 nil 就停下来。
 作为字典 local config = { host = &amp;#34;127.0.0.1&amp;#34;, port = 6379, timeout = 1000, } print(config[&amp;#34;host&amp;#34;]) -- 127.0.0.1 print(config.port) -- 6379（两种写法等价） -- 遍历字典 for k, v in pairs(config) do print(k, v) end pairs 遍历 table 里所有的键值对，包括数组部分和字典部分，但顺序不固定。
 同时作为两种 table 完全可以既有数组部分又有字典部分：
-local user = { &amp;#34;alice&amp;#34;, -- [1] &amp;#34;bob&amp;#34;, -- [2] name = &amp;#34;alice&amp;#34;, age = 28, } print(user[1]) -- alice …  ]]></content></entry><entry><title>05 | Lua 流程控制与函数</title><url>/blog/openresty-05-lua-control-flow/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Lua</tag></tags><content type="html"><![CDATA[  上一篇我们把 Lua 的六种数据类型摸了个遍。有了数据，下一步自然是：怎么用代码控制这些数据的流向？
+local user = { &amp;#34;alice&amp;#34;, -- [1] &amp;#34;bob&amp;#34;, -- [2] name = &amp;#34;alice&amp;#34;, age = 28, } print(user[1]) -- alice …  ]]></content></entry><entry><title>07 | Lua 模块系统与代码组织</title><url>/blog/openresty-07-lua-modules/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Lua</tag><tag>模块</tag></tags><content type="html"><![CDATA[  上一篇我们把 table 和元表研究透了。现在代码量开始多起来，总不能把所有逻辑都塞进一个文件。这篇来聊 Lua 的模块系统——如何拆分代码、如何复用，以及在 OpenResty 里该怎么组织项目结构。
+require 是什么 Lua 用 require 加载模块，用法很简单：
+local cjson = require &amp;#34;cjson&amp;#34; local redis = require &amp;#34;resty.redis&amp;#34; local my_util = require &amp;#34;utils.string_helper&amp;#34; require 背后做了几件事：
+检查 package.loaded 缓存，如果已经加载过，直接返回缓存结果（不会重复执行） 在 package.path 指定的路径里查找对应的 .lua 文件 找到后执行该文件，把返回值存入缓存并返回 这个缓存机制很重要：同一个模块无论 require 多少次，只执行一次。
+定义一个模块 Lua 模块本质上就是一个返回 table 的文件：
+-- utils/math_helper.lua local M = {} function M.add(a, b) return a + b end function M.clamp(val, min, max) if val &amp;lt; min then return min end if val &amp;gt; max then return max end return val end -- 私有函数，不挂在 M 上，外部访问不到 local function internal_check(val) return type(val) == &amp;#34;number&amp;#34; end function M.safe_sqrt(val) if not internal_check(val) then return nil, &amp;#34;not a number&amp;#34; end return math.sqrt(val) end return M 使用时：
+local math_helper = require &amp;#34;utils.math_helper&amp;#34; print(math_helper.add(3, 4)) -- 7 …  ]]></content></entry><entry><title>05 | Lua 流程控制与函数</title><url>/blog/openresty-05-lua-control-flow/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Lua</tag></tags><content type="html"><![CDATA[  上一篇我们把 Lua 的六种数据类型摸了个遍。有了数据，下一步自然是：怎么用代码控制这些数据的流向？
 这篇文章讲 Lua 的流程控制和函数系统。内容不多，但有几个地方和主流语言不太一样，如果不注意，写出来的代码虽然能跑，但很可能埋着隐患。
 if / elseif / else：条件判断 Lua 的 if 语法和大多数语言差不多，但有两点值得注意：用 then 和 end 包围，不用花括号。
 local score = 85 if score &amp;gt;= 90 then print(&amp;#34;优秀&amp;#34;) elseif score &amp;gt;= 60 then print(&amp;#34;及格&amp;#34;) else print(&amp;#34;不及格&amp;#34;) end 多条件分支用 elseif（注意是一个词，不是 else if）。
