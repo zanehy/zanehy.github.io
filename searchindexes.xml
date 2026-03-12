@@ -1,4 +1,14 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>07 | Lua 模块系统与代码组织</title><url>/blog/openresty-07-lua-modules/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Lua</tag><tag>模块</tag></tags><content type="html"><![CDATA[  上一篇我们把 table 和元表研究透了。现在代码量开始多起来，总不能把所有逻辑都塞进一个文件。这篇来聊 Lua 的模块系统——如何拆分代码、如何复用，以及在 OpenResty 里该怎么组织项目结构。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>08 | LuaJIT 与性能</title><url>/blog/openresty-08-luajit-performance/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Lua</tag><tag>LuaJIT</tag><tag>性能</tag></tags><content type="html"> OpenResty 之所以能在高并发场景下打出不俗的性能，Nginx 的事件驱动模型是一方面，另一方面就是 LuaJIT。这篇文章来讲清楚 LuaJIT 是什么、它为什么快、以及在实际开发中有哪些性能陷阱值得注意。
+LuaJIT 与标准 Lua 的区别 标准 Lua（PUC-Rio Lua）是一个解释器，每次执行都要把 Lua 代码翻译成字节码再逐条解释运行。
+LuaJIT 则是一个带有即时编译（JIT，Just-In-Time Compilation）能力的实现。它能在运行时分析热点代码，把频繁执行的路径直接编译成机器码，性能可以接近 C 语言。
+除了 JIT，LuaJIT 还有：
+更快的解释器：即便 JIT 没有触发，LuaJIT 的解释器本身也比标准 Lua 快 2～5 倍 FFI 库：可以直接调用 C 函数和使用 C 数据结构，无需编写 C 扩展 更好的数字处理：LuaJIT 默认使用双精度浮点，数学运算路径更短 在 OpenResty 里，LuaJIT 是默认且唯一支持的 Lua 运行时。
+JIT 编译是怎么工作的 LuaJIT 的 JIT 编译器叫 tracing JIT。它的工作方式是：
+先用解释器执行代码，同时记录执行路径（trace） 当某条路径被执行超过阈值（默认 56 次），触发编译 把这条热路径编译成优化过的机器码 后续执行直接走机器码，跳过解释阶段 这意味着 JIT 的收益主要体现在循环和频繁调用的函数上。短命的代码（只执行一两次就结束）JIT 来不及发挥。
+查看 JIT 编译状态 LuaJIT 提供了 jit 库可以控制和查看 JIT 状态：
+-- 查看 JIT 是否开启 print(jit.status()) -- true / false -- 关闭 JIT（调试用） jit.off() -- 开启 JIT jit.on() -- 针对特定函数关闭 JIT jit.off(some_function) 在 OpenResty 里，可以用 luajit -jdump 工具查看哪些代码被编译了（生产环境一般不用，开发调试时有用）。
+FFI：直接调用 C 库 FFI（Foreign Function Interface）是 LuaJIT 最强大的特性之一。它让你可以直接在 Lua 代码里声明和调用 C 函数，不需要写 C 扩展模块。
+基本用 …</content></entry><entry><title>07 | Lua 模块系统与代码组织</title><url>/blog/openresty-07-lua-modules/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Lua</tag><tag>模块</tag></tags><content type="html"><![CDATA[  上一篇我们把 table 和元表研究透了。现在代码量开始多起来，总不能把所有逻辑都塞进一个文件。这篇来聊 Lua 的模块系统——如何拆分代码、如何复用，以及在 OpenResty 里该怎么组织项目结构。
 require 是什么 Lua 用 require 加载模块，用法很简单：
 local cjson = require &amp;#34;cjson&amp;#34; local redis = require &amp;#34;resty.redis&amp;#34; local my_util = require &amp;#34;utils.string_helper&amp;#34; require 背后做了几件事：
 检查 package.loaded 缓存，如果已经加载过，直接返回缓存结果（不会重复执行） 在 package.path 指定的路径里查找对应的 .lua 文件 找到后执行该文件，把返回值存入缓存并返回 这个缓存机制很重要：同一个模块无论 require 多少次，只执行一次。
