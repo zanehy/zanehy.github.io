@@ -1,4 +1,11 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>08 | LuaJIT 与性能</title><url>/blog/openresty-08-luajit-performance/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Lua</tag><tag>LuaJIT</tag><tag>性能</tag></tags><content type="html"> OpenResty 之所以能在高并发场景下打出不俗的性能，Nginx 的事件驱动模型是一方面，另一方面就是 LuaJIT。这篇文章来讲清楚 LuaJIT 是什么、它为什么快、以及在实际开发中有哪些性能陷阱值得注意。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>09 | ngx. 核心 API 全览</title><url>/blog/openresty-09-ngx-api/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Lua</tag><tag>ngx API</tag></tags><content type="html"><![CDATA[  前两个阶段我们把 Lua 语言本身搞清楚了。从这篇开始进入第三阶段——OpenResty 核心 API。这些 API 是你和 Nginx 打交道的直接工具，几乎每个请求处理逻辑里都会用到。
+输出响应 ngx.say 和 ngx.print 这是最基础的输出函数，区别只有一个：ngx.say 末尾自动加换行，ngx.print 不加。
+content_by_lua_block { ngx.say(&amp;#34;Hello, World!&amp;#34;) -- 输出 &amp;#34;Hello, World!\n&amp;#34; ngx.print(&amp;#34;no newline here&amp;#34;) -- 输出 &amp;#34;no newline here&amp;#34; ngx.say(&amp;#34;line 1&amp;#34;, &amp;#34;line 2&amp;#34;) -- 可以传多个参数，依次输出 } 两个函数都接受多个参数，效果等同于拼接后输出。传 nil 会被忽略，传 table 会报错。
+ngx.send_headers 默认情况下，第一次调用 ngx.say 或 ngx.print 时响应头会自动发送。如果需要提前发送头，可以显式调用：
+ngx.status = 200 ngx.header[&amp;#34;Content-Type&amp;#34;] = &amp;#34;application/json&amp;#34; ngx.send_headers() -- 之后可以分块输出 body ngx.say(&amp;#39;{&amp;#34;status&amp;#34;: &amp;#34;ok&amp;#34;}&amp;#39;) ngx.flush 强制把缓冲区里的内容发送给客户端（流式响应时用）：
+for i = 1, 5 do ngx.say(&amp;#34;chunk &amp;#34; .. i) ngx.flush(true) -- true 表示同步等待发送完成 ngx.sleep(0.5) end 控制响应状态 ngx.status ngx.status = 404 ngx.say(&amp;#34;Not Found&amp;#34;) ngx.status 必须在发送响应头之前设置，否则不生效。
+ngx.exit 立即结束请求处理，返回指定状态码：
+-- 返回 403 并终止 ngx.exit(403) -- 返回 200（正常结束） ngx.exit(ngx.OK) …  ]]></content></entry><entry><title>08 | LuaJIT 与性能</title><url>/blog/openresty-08-luajit-performance/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>Lua</tag><tag>LuaJIT</tag><tag>性能</tag></tags><content type="html"> OpenResty 之所以能在高并发场景下打出不俗的性能，Nginx 的事件驱动模型是一方面，另一方面就是 LuaJIT。这篇文章来讲清楚 LuaJIT 是什么、它为什么快、以及在实际开发中有哪些性能陷阱值得注意。
 LuaJIT 与标准 Lua 的区别 标准 Lua（PUC-Rio Lua）是一个解释器，每次执行都要把 Lua 代码翻译成字节码再逐条解释运行。
 LuaJIT 则是一个带有即时编译（JIT，Just-In-Time Compilation）能力的实现。它能在运行时分析热点代码，把频繁执行的路径直接编译成机器码，性能可以接近 C 语言。
 除了 JIT，LuaJIT 还有：
