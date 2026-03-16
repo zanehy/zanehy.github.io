@@ -1,0 +1,231 @@
+<!doctype html><html lang=zh-CN data-theme=dark><head><meta charset=UTF-8><meta name=viewport content="width=device-width"><meta name=theme-color content="#222" media="(prefers-color-scheme: dark)"><meta name=generator content="Hugo 0.123.7"><link rel="shortcut icon" type=image/x-icon href=/imgs/icons/zanehy.ico><link rel=icon type=image/x-icon href=/imgs/icons/zanehy.ico><link rel=icon type=image/png sizes=16x16 href=/imgs/icons/zanehy_16x16.jpg><link rel=icon type=image/png sizes=32x32 href=/imgs/icons/zanehy_32_32.jpg><link rel=apple-touch-icon sizes=180x180 href=/imgs/zanehy.jpg><meta itemprop=name content="11 | 响应处理：控制一切输出"><meta itemprop=description content="掌握 OpenResty 响应输出的完整控制：设置状态码与响应头、返回 JSON、实现重定向、使用 ngx.location.capture 发起子请求。"><meta itemprop=datePublished zgotmplz><meta itemprop=dateModified zgotmplz><meta itemprop=image content="https://zanehy.github.io/imgs/zanehy.jpg"><meta itemprop=keywords content="OpenResty,Lua,响应处理"><meta property="og:type" content="article"><meta property="og:title" content="11 | 响应处理：控制一切输出"><meta property="og:description" content="掌握 OpenResty 响应输出的完整控制：设置状态码与响应头、返回 JSON、实现重定向、使用 ngx.location.capture 发起子请求。"><meta property="og:image" content="/imgs/zanehy.jpg"><meta property="og:image:width" content="312"><meta property="og:image:height" content="312"><meta property="og:image:type" content="image/jpeg/png/svg/jpg"><meta property="og:url" content="https://zanehy.github.io/blog/openresty-11-response-handling/"><meta property="og:site_name" content="红岩 | 个人博客"><meta property="og:locale" content="zh-CN"><meta property="article:author" content="红岩"><meta property="article:published_time" content="2026-03-16 15:02:00 +0800 CST"><meta property="article:modified_time" content="2026-03-16 15:02:00 +0800 CST"><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/font-awesome/6.1.2/css/all.min.css><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/animate.css/3.1.1/animate.min.css><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/viewerjs/1.11.0/viewer.min.css><link rel=stylesheet href=/css/main.min.33a74da2976ebbac6b4f1852845dfaad330b3fbd6c4e4b31ec4820969c3d5038.css><script type=text/javascript>(function(){localDB={set:function(e,t,n){if(n===0)return;const s=new Date,o=n*864e5,i={value:t,expiry:s.getTime()+o};localStorage.setItem(e,JSON.stringify(i))},get:function(e){const t=localStorage.getItem(e);if(!t)return void 0;const n=JSON.parse(t),s=new Date;return s.getTime()>n.expiry?(localStorage.removeItem(e),void 0):n.value}},theme={active:function(){const e=localDB.get("theme");if(e==null)return;theme.toggle(e),window.matchMedia("(prefers-color-scheme: dark)").addListener(function(e){theme.toggle(e.matches?"dark":"light")})},toggle:function(e){document.documentElement.setAttribute("data-theme",e),localDB.set("theme",e,2);const t=document.querySelector("iframe.giscus-frame");if(t){const n={setConfig:{theme:e}};t.contentWindow.postMessage({giscus:n},"https://giscus.app")}}},theme.active()})(window)</script><script class=next-config data-name=page type=application/json>{"comments":false,"isHome":false,"isPage":true,"path":"openresty-11-response-handling","permalink":"https://zanehy.github.io/blog/openresty-11-response-handling/","title":"11 | 响应处理：控制一切输出","waline":{"js":[{"alias":"waline","alias_name":"@waline/client","file":"dist/pageview.js","name":"pageview","version":"2.13.0"},{"alias":"waline","alias_name":"@waline/client","file":"dist/comment.js","name":"comment","version":"2.13.0"}]}}</script><script type=text/javascript>document.addEventListener("DOMContentLoaded",()=>{var e=document.createElement("script");e.charset="UTF-8",e.src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js",e.async=!1,e.defer=!0,document.head.appendChild(e),e.onload=function(){NexT.utils.fmtBusuanzi()}})</script><title>11 | 响应处理：控制一切输出 - 红岩 | 个人博客</title><noscript><link rel=stylesheet href=/css/noscript.css></noscript></head><body itemscope itemtype=http://schema.org/WebPage class=use-motion><div class=headband></div><main class=main><header class=header itemscope itemtype=http://schema.org/WPHeader><div class=header-inner><div class=site-brand-container><div class=site-nav-toggle><div class=toggle aria-label role=button><span class=toggle-line></span>
+<span class=toggle-line></span>
+<span class=toggle-line></span></div></div><div class=site-meta><a href=/ class=brand rel=start><i class=logo-line></i><h1 class=site-title>红岩 | 个人博客</h1><i class=logo-line></i></a><p class=site-subtitle itemprop=description>记录生活，记录成长</p></div><div class=site-nav-right><div class="toggle popup-trigger"><i class="fa fa-search fa-fw fa-lg"></i></div></div></div><nav class=site-nav><ul class="main-menu menu"><li class="menu-item menu-item-home"><a href=/ class=hvr-icon-pulse rel=section><i class="fa fa-home hvr-icon"></i>首页</a></li><li class="menu-item menu-item-about"><a href=/about.html class=hvr-icon-pulse rel=section><i class="fa fa-user hvr-icon"></i>关于</a></li><li class="menu-item menu-item-my_blog"><a href=/blog/ class=hvr-icon-pulse rel=section><i class="fa fa-blog hvr-icon"></i>技术博客</a></li><li class="menu-item menu-item-my_life"><a href=/life/ class=hvr-icon-pulse rel=section><i class="fa fa-pizza-slice hvr-icon"></i>生活点滴</a></li><li class="menu-item menu-item-archives"><a href=/archives/ class=hvr-icon-pulse rel=section><i class="fa fa-archive hvr-icon"></i>归档日志
+<span class=badge>12</span></a></li><li class="menu-item menu-item-search"><a role=button class="popup-trigger hvr-icon-pulse"><i class="fa fa-search fa-fw hvr-icon"></i>搜索</a></li></ul></nav><div class=search-pop-overlay><div class="popup search-popup"><div class=search-header><span class=search-icon><i class="fa fa-search"></i></span><div class=search-input-container><input autocomplete=off autocapitalize=off maxlength=80 placeholder=搜索... spellcheck=false type=search class=search-input></div><span class=popup-btn-close role=button><i class="fa fa-times-circle"></i></span></div><div class="search-result-container no-result"><div class=search-result-icon><i class="fa fa-spinner fa-pulse fa-5x"></i></div></div></div></div></div><div class="toggle sidebar-toggle" role=button><span class=toggle-line></span>
+<span class=toggle-line></span>
+<span class=toggle-line></span></div><aside class=sidebar><div class="sidebar-inner sidebar-nav-active sidebar-toc-active"><ul class=sidebar-nav><li class=sidebar-nav-toc>文章目录</li><li class=sidebar-nav-overview>站点概览</li></ul><div class=sidebar-panel-container><div class="post-toc-wrap sidebar-panel"><div class="post-toc animated"><nav id=TableOfContents><ul><li><a href=#设置响应头与状态码>设置响应头与状态码</a></li><li><a href=#返回-json-响应>返回 JSON 响应</a><ul><li><a href=#处理-cjson-的特殊类型>处理 cjson 的特殊类型</a></li></ul></li><li><a href=#重定向>重定向</a><ul><li><a href=#外部重定向>外部重定向</a></li><li><a href=#内部跳转>内部跳转</a></li></ul></li><li><a href=#ngxlocationcapture子请求>ngx.location.capture：子请求</a><ul><li><a href=#基本用法>基本用法</a></li><li><a href=#post-子请求>POST 子请求</a></li><li><a href=#并发子请求>并发子请求</a></li><li><a href=#子请求的限制>子请求的限制</a></li></ul></li><li><a href=#流式响应>流式响应</a></li><li><a href=#一个完整的-api-响应封装>一个完整的 API 响应封装</a></li><li><a href=#小结>小结</a></li></ul></nav></div></div><div class="site-overview-wrap sidebar-panel"><div class="site-author site-overview-item animated" itemprop=author itemscope itemtype=http://schema.org/Person><img class=site-author-image itemprop=image alt=红岩 src=/imgs/img-lazy-loading.gif data-src=/imgs/zanehy.jpg><p class=site-author-name itemprop=name>红岩</p><div class=site-description itemprop=description></div></div><div class="site-state-wrap site-overview-item animated"><nav class=site-state><div class="site-state-item site-state-posts"><a href=/archives/><span class=site-state-item-count>12</span>
+<span class=site-state-item-name>日志</span></a></div><div class="site-state-item site-state-categories"><a href=/categories/><span class=site-state-item-count>2</span>
+<span class=site-state-item-name>分类</span></a></div><div class="site-state-item site-state-tags"><a href=/tags/><span class=site-state-item-count>14</span>
+<span class=site-state-item-name>标签</span></a></div></nav></div><div class="links-of-social site-overview-item animated"></div></div></div></div><div id=siteinfo-card-widget class=sidebar-card-widget><div class=item-headline><i class="fas fa-chart-line"></i>
+<span>网站资讯</span></div><div class=siteinfo><div class=siteinfo-item><div class=item-name><i class="fa-solid fa-calendar-check"></i>已运行：</div><div class=item-count id=runTimes data-publishdate=2026-03-04T17:00:00+08:00></div></div><div class=siteinfo-item><div class=item-name><i class="fas fa fa-user"></i>总访客数：</div><div class=item-count id=busuanzi_value_site_uv><i class="fa fa-sync fa-spin"></i></div></div><div class=siteinfo-item><div class=item-name><i class="fas fa fa-eye"></i>页面浏览：</div><div class=item-count id=busuanzi_value_site_pv><i class="fa fa-sync fa-spin"></i></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-font"></i>总字数：</div><div class=item-count id=wordsCount data-count=26995></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-mug-hot"></i>阅读约：</div><div class=item-count id=readTimes data-times=61></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-clock-rotate-left"></i>最后更新于：</div><div class=item-count id=last-push-date data-lastpushdate=2026-03-16T15:02:00+08:00></div></div></div></div></aside><div class=sidebar-dimmer></div></header><div class=tool-buttons><div id=toggle-theme class=button title=深浅模式切换><i class="fas fa-adjust"></i></div><div class=back-to-top role=button title=返回顶部><i class="fa fa-arrow-up"></i>
+<span>0%</span></div></div><div class=reading-progress-bar></div><a role=button class="book-mark-link book-mark-link-fixed"></a><a href=https://github.com/zanehy rel="noopener external nofollow noreferrer" target=_blank title="Follow me on GitHub" class="exturl github-corner"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0 0 115 115h15l12 27L250 250V0z"/><path d="M128.3 109C113.8 99.7 119 89.6 119 89.6 122 82.7 120.5 78.6 120.5 78.6 119.2 72 123.4 76.3 123.4 76.3 127.3 80.9 125.5 87.3 125.5 87.3 122.9 97.6 130.6 101.9 134.4 103.2" fill="currentcolor" style="transform-origin:130px 106px" class="octo-arm"/><path d="M115 115C114.9 115.1 118.7 116.5 119.8 115.4l13.9-13.8C136.9 99.2 139.9 98.4 142.2 98.6 133.8 88 127.5 74.4 143.8 58 148.5 53.4 154 51.2 159.7 51 160.3 49.4 163.2 43.6 171.4 40.1 171.4 40.1 176.1 42.5 178.8 56.2 183.1 58.6 187.2 61.8 190.9 65.4 194.5 69 197.7 73.2 200.1 77.6 213.8 80.2 216.3 84.9 216.3 84.9 212.7 93.1 206.9 96 205.4 96.6 205.1 102.4 203 107.8 198.3 112.5 181.9 128.9 168.3 122.5 157.7 114.1 157.9 116.9 156.7 120.9 152.7 124.9L141 136.5C139.8 137.7 141.6 141.9 141.8 141.8z" fill="currentcolor" class="octo-body"/></svg>
+</a><script type=text/javascript src=//sidecar.gitter.im/dist/sidecar.v1.js async></script><script type=text/javascript>((window.gitter={}).chat={}).options={room:"hugo-next/community"}</script><noscript><div class=noscript-warning>Theme NexT works best with JavaScript enabled</div></noscript><div class="main-inner post posts-expand"><div class=post-block><article itemscope itemtype=http://schema.org/Article class=post-content lang><link itemprop=mainEntityOfPage href=https://zanehy.github.io/blog/openresty-11-response-handling/><span hidden itemprop=author itemscope itemtype=http://schema.org/Person><meta itemprop=image content="/imgs/zanehy.jpg"><meta itemprop=name content="红岩"></span><span hidden itemprop=publisher itemscope itemtype=http://schema.org/Organization><meta itemprop=name content="红岩"><meta itemprop=description content></span><span hidden itemprop=post itemscope itemtype=http://schema.org/CreativeWork><meta itemprop=name content="11 | 响应处理：控制一切输出"><meta itemprop=description content="掌握 OpenResty 响应输出的完整控制：设置状态码与响应头、返回 JSON、实现重定向、使用 ngx.location.capture 发起子请求。"></span><header class=post-header><h1 class=post-title itemprop="name headline">11 | 响应处理：控制一切输出</h1><div class=post-meta-container><div class=post-meta-items><span class=post-meta-item><span class=post-meta-item-icon><i class="far fa-calendar"></i>
+</span><span class=post-meta-item-text title=发表于>发表于：
+</span><time title="创建时间：2026-03-16 15:02:00 +0800 CST" itemprop="dateCreated datePublished" datetime="2026-03-16 15:02:00 +0800 CST">2026-03-16
+</time></span><span class=post-meta-item><span class=post-meta-item-icon><i class="far fa-folder-open"></i>
+</span><span class=post-meta-item-text title=分类于>分类于：
+</span><span itemprop=about itemscope itemtype=http://schema.org/Thing><a href=/categories/openresty itemprop=url rel=index><span itemprop=name>OpenResty</span></a></span></span></div><div class=post-meta-items><span class=post-meta-item title=字数><span class=post-meta-item-icon><i class="far fa-file-word"></i>
+</span><span class=post-meta-item-text>字数：</span>
+<span>1517</span>
+</span><span class=post-meta-item title=阅读><span class=post-meta-item-icon><i class="far fa-clock"></i>
+</span><span class=post-meta-item-text>阅读：&ap;</span>
+<span>4分钟</span>
+</span><span class=post-meta-item title=浏览><span class=post-meta-item-icon><i class="far fa-eye"></i>
+</span><span class=post-meta-item-text>浏览：
+</span><span id=busuanzi_value_page_pv data-path=/blog/openresty-11-response-handling/><i class="fa fa-sync fa-spin"></i></span></span></div></div></header><div class="post-body autonumber" itemprop=articleBody><p>上一篇把请求输入的读取方式讲完了。这篇来看另一半——如何控制响应输出。一个请求的生命周期里，响应这一侧同样有很多细节值得梳理。</p><h2 id=设置响应头与状态码>设置响应头与状态码
+<a class=header-anchor href=#%e8%ae%be%e7%bd%ae%e5%93%8d%e5%ba%94%e5%a4%b4%e4%b8%8e%e7%8a%b6%e6%80%81%e7%a0%81></a></h2><p>响应头和状态码必须在发送 body 之前设置，一旦第一次调用 <code>ngx.say</code> 或 <code>ngx.print</code>，响应头就会自动发出，之后再修改就没有效果了。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span>content_by_lua_block {
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 设置状态码</span>
+</span></span><span style=display:flex><span>    ngx.status <span style=color:#f92672>=</span> <span style=color:#ae81ff>201</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 设置响应头</span>
+</span></span><span style=display:flex><span>    ngx.header[<span style=color:#e6db74>&#34;Content-Type&#34;</span>] <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;application/json; charset=utf-8&#34;</span>
+</span></span><span style=display:flex><span>    ngx.header[<span style=color:#e6db74>&#34;X-Request-Id&#34;</span>] <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;abc-123&#34;</span>
+</span></span><span style=display:flex><span>    ngx.header[<span style=color:#e6db74>&#34;Cache-Control&#34;</span>] <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;no-cache, no-store&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 设置多值响应头</span>
+</span></span><span style=display:flex><span>    ngx.header[<span style=color:#e6db74>&#34;Set-Cookie&#34;</span>] <span style=color:#f92672>=</span> {
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;session_id=abc123; Path=/; HttpOnly&#34;</span>,
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;theme=dark; Path=/; Max-Age=86400&#34;</span>
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 删除某个响应头</span>
+</span></span><span style=display:flex><span>    ngx.header[<span style=color:#e6db74>&#34;X-Powered-By&#34;</span>] <span style=color:#f92672>=</span> <span style=color:#66d9ef>nil</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 此时才发送 body（头也随之发出）</span>
+</span></span><span style=display:flex><span>    ngx.say(<span style=color:#e6db74>&#39;{&#34;code&#34;:0}&#39;</span>)
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>常用状态码常量，不用背数字：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span>ngx.HTTP_OK                    <span style=color:#75715e>-- 200</span>
+</span></span><span style=display:flex><span>ngx.HTTP_CREATED               <span style=color:#75715e>-- 201</span>
+</span></span><span style=display:flex><span>ngx.HTTP_NO_CONTENT            <span style=color:#75715e>-- 204</span>
+</span></span><span style=display:flex><span>ngx.HTTP_MOVED_PERMANENTLY     <span style=color:#75715e>-- 301</span>
+</span></span><span style=display:flex><span>ngx.HTTP_MOVED_TEMPORARILY     <span style=color:#75715e>-- 302</span>
+</span></span><span style=display:flex><span>ngx.HTTP_NOT_MODIFIED          <span style=color:#75715e>-- 304</span>
+</span></span><span style=display:flex><span>ngx.HTTP_BAD_REQUEST           <span style=color:#75715e>-- 400</span>
+</span></span><span style=display:flex><span>ngx.HTTP_UNAUTHORIZED          <span style=color:#75715e>-- 401</span>
+</span></span><span style=display:flex><span>ngx.HTTP_FORBIDDEN             <span style=color:#75715e>-- 403</span>
+</span></span><span style=display:flex><span>ngx.HTTP_NOT_FOUND             <span style=color:#75715e>-- 404</span>
+</span></span><span style=display:flex><span>ngx.HTTP_INTERNAL_SERVER_ERROR <span style=color:#75715e>-- 500</span>
+</span></span><span style=display:flex><span>ngx.HTTP_BAD_GATEWAY           <span style=color:#75715e>-- 502</span>
+</span></span><span style=display:flex><span>ngx.HTTP_SERVICE_UNAVAILABLE   <span style=color:#75715e>-- 503</span>
+</span></span></code></pre></div><h2 id=返回-json-响应>返回 JSON 响应
+<a class=header-anchor href=#%e8%bf%94%e5%9b%9e-json-%e5%93%8d%e5%ba%94></a></h2><p>JSON 是 API 接口最常见的响应格式。标准做法：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span>content_by_lua_block {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> cjson <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;cjson&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 统一封装响应函数</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>json_response</span>(code, message, data)
+</span></span><span style=display:flex><span>        ngx.header[<span style=color:#e6db74>&#34;Content-Type&#34;</span>] <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;application/json; charset=utf-8&#34;</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>local</span> body <span style=color:#f92672>=</span> {
+</span></span><span style=display:flex><span>            code    <span style=color:#f92672>=</span> code,
+</span></span><span style=display:flex><span>            message <span style=color:#f92672>=</span> message,
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> data <span style=color:#f92672>~=</span> <span style=color:#66d9ef>nil</span> <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>            body.data <span style=color:#f92672>=</span> data
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>        ngx.say(cjson.encode(body))
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 成功响应</span>
+</span></span><span style=display:flex><span>    json_response(<span style=color:#ae81ff>0</span>, <span style=color:#e6db74>&#34;ok&#34;</span>, {id <span style=color:#f92672>=</span> <span style=color:#ae81ff>1</span>, name <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;alice&#34;</span>})
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 错误响应</span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- ngx.status = 400</span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- json_response(400, &#34;invalid param&#34;)</span>
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>封装成函数后，整个项目的响应格式保持一致，维护起来也方便。</p><h3 id=处理-cjson-的特殊类型>处理 cjson 的特殊类型
+<a class=header-anchor href=#%e5%a4%84%e7%90%86-cjson-%e7%9a%84%e7%89%b9%e6%ae%8a%e7%b1%bb%e5%9e%8b></a></h3><p>cjson 对某些 Lua 类型有特殊处理，需要注意：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#66d9ef>local</span> cjson <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;cjson&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 空 table 默认编码为 {}（对象），不是 []</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> t <span style=color:#f92672>=</span> {}
+</span></span><span style=display:flex><span>cjson.encode(t)  <span style=color:#75715e>-- &#34;{}&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 如果需要编码为空数组</span>
+</span></span><span style=display:flex><span>cjson.encode(cjson.empty_array)  <span style=color:#75715e>-- &#34;[]&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 或者用 newproxy 标记</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> arr <span style=color:#f92672>=</span> setmetatable({}, cjson.array_mt)
+</span></span><span style=display:flex><span>cjson.encode(arr)  <span style=color:#75715e>-- &#34;[]&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- null 值</span>
+</span></span><span style=display:flex><span>cjson.encode({name <span style=color:#f92672>=</span> cjson.null})  <span style=color:#75715e>-- &#39;{&#34;name&#34;:null}&#39;</span>
+</span></span></code></pre></div><h2 id=重定向>重定向
+<a class=header-anchor href=#%e9%87%8d%e5%ae%9a%e5%90%91></a></h2><h3 id=外部重定向>外部重定向
+<a class=header-anchor href=#%e5%a4%96%e9%83%a8%e9%87%8d%e5%ae%9a%e5%90%91></a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- 302 临时重定向（默认）</span>
+</span></span><span style=display:flex><span>ngx.redirect(<span style=color:#e6db74>&#34;https://example.com/new-path&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 301 永久重定向</span>
+</span></span><span style=display:flex><span>ngx.redirect(<span style=color:#e6db74>&#34;https://example.com/new-path&#34;</span>, <span style=color:#ae81ff>301</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 带参数的跳转</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> new_url <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;https://example.com/login?next=&#34;</span> <span style=color:#f92672>..</span> ngx.escape_uri(ngx.var.request_uri)
+</span></span><span style=display:flex><span>ngx.redirect(new_url)
+</span></span></code></pre></div><p><code>ngx.redirect</code> 内部调用了 <code>ngx.exit</code>，执行后当前 Lua 代码会立即终止。</p><h3 id=内部跳转>内部跳转
+<a class=header-anchor href=#%e5%86%85%e9%83%a8%e8%b7%b3%e8%bd%ac></a></h3><p>内部跳转不会改变客户端看到的 URL，相当于 Nginx 的 <code>rewrite ... last</code>：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- 跳转到同一个 server 下的另一个 location</span>
+</span></span><span style=display:flex><span>ngx.exec(<span style=color:#e6db74>&#34;/internal/handler&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 带参数</span>
+</span></span><span style=display:flex><span>ngx.exec(<span style=color:#e6db74>&#34;/internal/handler&#34;</span>, {user_id <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;123&#34;</span>, action <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;view&#34;</span>})
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 直接传 query string</span>
+</span></span><span style=display:flex><span>ngx.exec(<span style=color:#e6db74>&#34;/internal/handler?user_id=123&amp;action=view&#34;</span>)
+</span></span></code></pre></div><p><code>ngx.exec</code> 同样会立即终止当前 Lua 代码。</p><h2 id=ngxlocationcapture子请求>ngx.location.capture：子请求
+<a class=header-anchor href=#ngxlocationcapture%e5%ad%90%e8%af%b7%e6%b1%82></a></h2><p>子请求是 OpenResty 里一个非常实用的特性——在处理当前请求的过程中，向另一个 location 发起内部请求，拿到结果后继续处理。整个过程对客户端透明。</p><h3 id=基本用法>基本用法
+<a class=header-anchor href=#%e5%9f%ba%e6%9c%ac%e7%94%a8%e6%b3%95></a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span>content_by_lua_block {
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 向 /api/user 发起子请求</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> res <span style=color:#f92672>=</span> ngx.location.capture(<span style=color:#e6db74>&#34;/api/user&#34;</span>, {
+</span></span><span style=display:flex><span>        method <span style=color:#f92672>=</span> ngx.HTTP_GET,
+</span></span><span style=display:flex><span>        args   <span style=color:#f92672>=</span> { id <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;123&#34;</span> }
+</span></span><span style=display:flex><span>    })
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    ngx.say(<span style=color:#e6db74>&#34;status: &#34;</span>, res.status)
+</span></span><span style=display:flex><span>    ngx.say(<span style=color:#e6db74>&#34;body: &#34;</span>, res.body)
+</span></span><span style=display:flex><span>    ngx.say(<span style=color:#e6db74>&#34;header: &#34;</span>, res.header[<span style=color:#e6db74>&#34;Content-Type&#34;</span>])
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>子请求的结果包含：</p><ul><li><code>res.status</code>：HTTP 状态码</li><li><code>res.body</code>：响应 body（字符串）</li><li><code>res.header</code>：响应头 table</li></ul><h3 id=post-子请求>POST 子请求
+<a class=header-anchor href=#post-%e5%ad%90%e8%af%b7%e6%b1%82></a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#66d9ef>local</span> res <span style=color:#f92672>=</span> ngx.location.capture(<span style=color:#e6db74>&#34;/internal/validate&#34;</span>, {
+</span></span><span style=display:flex><span>    method <span style=color:#f92672>=</span> ngx.HTTP_POST,
+</span></span><span style=display:flex><span>    body   <span style=color:#f92672>=</span> <span style=color:#e6db74>&#39;{&#34;token&#34;:&#34;abc123&#34;}&#39;</span>,
+</span></span><span style=display:flex><span>    args   <span style=color:#f92672>=</span> { source <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;api&#34;</span> }
+</span></span><span style=display:flex><span>})
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> res.status <span style=color:#f92672>~=</span> <span style=color:#ae81ff>200</span> <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>    ngx.status <span style=color:#f92672>=</span> <span style=color:#ae81ff>401</span>
+</span></span><span style=display:flex><span>    ngx.say(<span style=color:#e6db74>&#34;unauthorized&#34;</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> ngx.exit(ngx.OK)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span></code></pre></div><h3 id=并发子请求>并发子请求
+<a class=header-anchor href=#%e5%b9%b6%e5%8f%91%e5%ad%90%e8%af%b7%e6%b1%82></a></h3><p><code>ngx.location.capture_multi</code> 可以同时发起多个子请求，等所有结果返回后再继续，大幅降低总耗时：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span>content_by_lua_block {
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 并发发起三个子请求</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> res_user, res_order, res_product <span style=color:#f92672>=</span> ngx.location.capture_multi({
+</span></span><span style=display:flex><span>        { <span style=color:#e6db74>&#34;/api/user&#34;</span>,    { args <span style=color:#f92672>=</span> { id <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;123&#34;</span> } } },
+</span></span><span style=display:flex><span>        { <span style=color:#e6db74>&#34;/api/order&#34;</span>,   { args <span style=color:#f92672>=</span> { user_id <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;123&#34;</span> } } },
+</span></span><span style=display:flex><span>        { <span style=color:#e6db74>&#34;/api/product&#34;</span>, { args <span style=color:#f92672>=</span> { id <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;456&#34;</span> } } },
+</span></span><span style=display:flex><span>    })
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 三个请求同时执行，总耗时约等于最慢那个</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> cjson <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;cjson&#34;</span>
+</span></span><span style=display:flex><span>    ngx.say(cjson.encode({
+</span></span><span style=display:flex><span>        user    <span style=color:#f92672>=</span> cjson.decode(res_user.body),
+</span></span><span style=display:flex><span>        order   <span style=color:#f92672>=</span> cjson.decode(res_order.body),
+</span></span><span style=display:flex><span>        product <span style=color:#f92672>=</span> cjson.decode(res_product.body),
+</span></span><span style=display:flex><span>    }))
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>对应的 nginx.conf 配置，子请求的目标 location 通常标记为 internal，防止被外部直接访问：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-nginx data-lang=nginx><span style=display:flex><span><span style=color:#66d9ef>location</span> <span style=color:#e6db74>/api/user</span> {
+</span></span><span style=display:flex><span>    <span style=color:#f92672>internal</span>;
+</span></span><span style=display:flex><span>    <span style=color:#f92672>content_by_lua_file</span> <span style=color:#e6db74>lua/handlers/user.lua</span>;
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>location</span> <span style=color:#e6db74>/api/order</span> {
+</span></span><span style=display:flex><span>    <span style=color:#f92672>internal</span>;
+</span></span><span style=display:flex><span>    <span style=color:#f92672>proxy_pass</span> <span style=color:#e6db74>http://order-service</span>;
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h3 id=子请求的限制>子请求的限制
+<a class=header-anchor href=#%e5%ad%90%e8%af%b7%e6%b1%82%e7%9a%84%e9%99%90%e5%88%b6></a></h3><ul><li>子请求和父请求共享连接资源，不适合超高并发场景下大量使用</li><li>子请求的 body 会完整缓存在内存，不适合大文件响应</li><li>子请求不能跨 server，只能访问同一个 server 下的 location</li><li>嵌套子请求深度有限制（默认 50 层）</li></ul><h2 id=流式响应>流式响应
+<a class=header-anchor href=#%e6%b5%81%e5%bc%8f%e5%93%8d%e5%ba%94></a></h2><p>对于需要持续推送数据的场景（比如 SSE、进度推送），可以分批发送：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span>content_by_lua_block {
+</span></span><span style=display:flex><span>    ngx.header[<span style=color:#e6db74>&#34;Content-Type&#34;</span>] <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;text/event-stream&#34;</span>
+</span></span><span style=display:flex><span>    ngx.header[<span style=color:#e6db74>&#34;Cache-Control&#34;</span>] <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;no-cache&#34;</span>
+</span></span><span style=display:flex><span>    ngx.header[<span style=color:#e6db74>&#34;X-Accel-Buffering&#34;</span>] <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;no&#34;</span>  <span style=color:#75715e>-- 关闭 Nginx 缓冲</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> i <span style=color:#f92672>=</span> <span style=color:#ae81ff>1</span>, <span style=color:#ae81ff>10</span> <span style=color:#66d9ef>do</span>
+</span></span><span style=display:flex><span>        ngx.say(<span style=color:#e6db74>&#34;data: chunk &#34;</span> <span style=color:#f92672>..</span> i <span style=color:#f92672>..</span> <span style=color:#e6db74>&#34;</span><span style=color:#ae81ff>\n</span><span style=color:#e6db74>&#34;</span>)
+</span></span><span style=display:flex><span>        ngx.flush(<span style=color:#66d9ef>true</span>)
+</span></span><span style=display:flex><span>        ngx.sleep(<span style=color:#ae81ff>0.5</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h2 id=一个完整的-api-响应封装>一个完整的 API 响应封装
+<a class=header-anchor href=#%e4%b8%80%e4%b8%aa%e5%ae%8c%e6%95%b4%e7%9a%84-api-%e5%93%8d%e5%ba%94%e5%b0%81%e8%a3%85></a></h2><p>实际项目里，通常会把响应逻辑封装成一个模块：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- lib/response.lua</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> cjson <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;cjson&#34;</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> M <span style=color:#f92672>=</span> {}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>function</span> <span style=color:#a6e22e>M</span>.<span style=color:#a6e22e>success</span>(data, message)
+</span></span><span style=display:flex><span>    ngx.header[<span style=color:#e6db74>&#34;Content-Type&#34;</span>] <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;application/json; charset=utf-8&#34;</span>
+</span></span><span style=display:flex><span>    ngx.say(cjson.encode({
+</span></span><span style=display:flex><span>        code    <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>,
+</span></span><span style=display:flex><span>        message <span style=color:#f92672>=</span> message <span style=color:#f92672>or</span> <span style=color:#e6db74>&#34;ok&#34;</span>,
+</span></span><span style=display:flex><span>        data    <span style=color:#f92672>=</span> data,
+</span></span><span style=display:flex><span>    }))
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>function</span> <span style=color:#a6e22e>M</span>.<span style=color:#a6e22e>error</span>(code, message, http_status)
+</span></span><span style=display:flex><span>    ngx.status <span style=color:#f92672>=</span> http_status <span style=color:#f92672>or</span> <span style=color:#ae81ff>200</span>
+</span></span><span style=display:flex><span>    ngx.header[<span style=color:#e6db74>&#34;Content-Type&#34;</span>] <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;application/json; charset=utf-8&#34;</span>
+</span></span><span style=display:flex><span>    ngx.say(cjson.encode({
+</span></span><span style=display:flex><span>        code    <span style=color:#f92672>=</span> code,
+</span></span><span style=display:flex><span>        message <span style=color:#f92672>=</span> message,
+</span></span><span style=display:flex><span>    }))
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>function</span> <span style=color:#a6e22e>M</span>.<span style=color:#a6e22e>redirect</span>(url, status)
+</span></span><span style=display:flex><span>    ngx.redirect(url, status <span style=color:#f92672>or</span> <span style=color:#ae81ff>302</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>return</span> M
+</span></span></code></pre></div><p>使用时：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#66d9ef>local</span> resp <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;lib.response&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 正常返回</span>
+</span></span><span style=display:flex><span>resp.success({id <span style=color:#f92672>=</span> <span style=color:#ae81ff>1</span>, name <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;alice&#34;</span>})
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 错误返回</span>
+</span></span><span style=display:flex><span>resp.error(<span style=color:#ae81ff>401</span>, <span style=color:#e6db74>&#34;token expired&#34;</span>, <span style=color:#ae81ff>401</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 重定向</span>
+</span></span><span style=display:flex><span>resp.redirect(<span style=color:#e6db74>&#34;/login&#34;</span>)
+</span></span></code></pre></div><h2 id=小结>小结
+<a class=header-anchor href=#%e5%b0%8f%e7%bb%93></a></h2><p>响应处理的几个核心要点：</p><ul><li>状态码和响应头必须在发送 body 之前设置</li><li>JSON 响应记得用 <code>cjson.safe</code> 版本，并统一封装格式</li><li><code>ngx.redirect</code> 用于外部跳转，<code>ngx.exec</code> 用于内部跳转</li><li><code>ngx.location.capture</code> 发起单个子请求，<code>capture_multi</code> 并发多个</li><li>子请求的目标 location 建议加 <code>internal</code> 限制</li></ul><p>下一篇来看 OpenResty 里各种数据共享的方式：<code>ngx.var</code>、<code>ngx.ctx</code>、<code>ngx.shared.DICT</code>——搞清楚它们的作用域，能避开很多诡异的 bug。</p></div><footer class=post-footer><div class=post-tags><a href=/tags/openresty>OpenResty
+</a><a href=/tags/lua>Lua
+</a><a href=/tags/%e5%93%8d%e5%ba%94%e5%a4%84%e7%90%86>响应处理</a></div><div class=addthis_inline_share_toolbox style=text-align:center></div><hr><div class=post-copyright><img src=/imgs/cc/cc.svg width=75 height=75 align=right alt=共享知识><ul><li class=post-copyright-title><strong>文章标题：</strong>
+11 | 响应处理：控制一切输出</li><li class=post-copyright-author><strong>本文作者： </strong>红岩</li><li class=post-copyright-link><strong>本文链接：</strong>
+<a id=post-cr-link href=https://zanehy.github.io/blog/openresty-11-response-handling/ title="11 | 响应处理：控制一切输出">https://zanehy.github.io/blog/openresty-11-response-handling/</a></li><li class=post-copyright-license><strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <i class="fab fa-fw fa-creative-commons"></i><a target=_blank href=https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh>BY-NC-SA</a> 许可协议。转载请注明出处！</li></ul></div><div class=post-nav><div class="post-nav-next post-nav-item"></div><div class="post-nav-prev post-nav-item"><a href=/blog/openresty-10-request-handling/ rel=prev title="10 | 请求处理：读取一切输入">10 | 请求处理：读取一切输入
+<i class="fa fa-chevron-right"></i></a></div></div></footer></article></div></div></main><footer class=footer><div class=footer-inner><div class=copyright>&copy;
+<span itemprop=copyrightYear>2024 - 2026
+</span><span class=with-love><i class="fa fa-heart"></i>
+</span><span class=author itemprop=copyrightHolder>红岩</span></div><div class=powered-by>由 <a href=https://gohugo.io title=0.123.7 target=_blank>Hugo</a> & <a href=https://github.com/hugo-next/hugo-theme-next title=4.5.3 target=_blank>Hugo NexT.Gemini</a> 强力驱动</div></div></footer><script type=text/javascript src=https://cdn.staticfile.org/animejs/3.2.1/anime.min.js defer></script><script type=text/javascript src=https://cdn.staticfile.org/viewerjs/1.11.0/viewer.min.js defer></script><script class=next-config data-name=main type=application/json>{"bookmark":{"color":"#888","enable":true,"save":"manual"},"copybtn":true,"darkmode":true,"giscus":{"cfg":{"category":"Comments","categoryid":null,"emit":false,"inputposition":"top","mapping":"title","reactions":false,"repo":"username/repo-name","repoid":null,"theme":"preferred_color_scheme"},"js":"https://giscus.app/client.js"},"hostname":"https://zanehy.github.io/","i18n":{"ds_day":" 天前","ds_days":" 天 ","ds_hour":" 小时前","ds_hours":" 小时 ","ds_just":"刚刚","ds_min":" 分钟前","ds_mins":" 分钟","ds_month":" 个月前","ds_years":" 年 ","empty":"没有找到任何搜索结果：${query}","hits":"找到 ${hits} 个搜索结果","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","placeholder":"搜索..."},"lang":"zh-CN","lazyload":false,"localSearch":{"enable":true,"limit":1e3,"path":"/searchindexes.xml","preload":true,"topnperarticle":-1,"trigger":"auto","unescape":true},"motion":{"async":true,"enable":true,"transition":{"collheader":"fadeInLeft","postblock":"fadeIn","postbody":"fadeInDown","postheader":"fadeInDown","sidebar":"fadeInUp"}},"postmeta":{"comments":{"enable":true,"plugin":"waline"},"views":{"enable":true,"plugin":"busuanzi"}},"root":"/","scheme":"Gemini","sidebar":{"display":"post","offset":12,"padding":18,"position":"left","width":256},"vendor":{"plugins":"qiniu","router":"https://cdn.staticfile.org"},"version":"4.5.3","waline":{"cfg":{"emoji":false,"imguploader":false,"placeholder":"请文明发言哟 ヾ(≧▽≦*)o","reaction":true,"reactiontext":["点赞","踩一下","得意","不屑","尴尬","睡觉"],"reactiontitle":"你认为这篇文章怎么样？","requiredmeta":["nick","mail"],"serverurl":null,"sofa":"快来发表你的意见吧 (≧∀≦)ゞ","wordlimit":200},"css":{"alias":"waline","file":"dist/waline.css","name":"@waline/client","version":"2.13.0"},"js":{"alias":"waline","file":"dist/waline.js","name":"@waline/client","version":"2.13.0"}}}</script><script type=text/javascript src=/js/main.min.0b6f435ab2b781f04f78d578f42b492c126726d94b54a88d0af9aaf3c50c4457.js defer></script></body></html>
