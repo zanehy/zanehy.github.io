@@ -1,0 +1,285 @@
+<!doctype html><html lang=zh-CN data-theme=dark><head><meta charset=UTF-8><meta name=viewport content="width=device-width"><meta name=theme-color content="#222" media="(prefers-color-scheme: dark)"><meta name=generator content="Hugo 0.123.7"><link rel="shortcut icon" type=image/x-icon href=/imgs/icons/zanehy.ico><link rel=icon type=image/x-icon href=/imgs/icons/zanehy.ico><link rel=icon type=image/png sizes=16x16 href=/imgs/icons/zanehy_16x16.jpg><link rel=icon type=image/png sizes=32x32 href=/imgs/icons/zanehy_32_32.jpg><link rel=apple-touch-icon sizes=180x180 href=/imgs/zanehy.jpg><meta itemprop=name content="15 | 连接 Redis：基础篇"><meta itemprop=description content="掌握 lua-resty-redis 的安装与配置，熟悉常用命令操作，重点理解连接池的配置方式，以及 OpenResty 中 Redis 错误处理的规范写法。"><meta itemprop=datePublished zgotmplz><meta itemprop=dateModified zgotmplz><meta itemprop=image content="https://zanehy.github.io/imgs/zanehy.jpg"><meta itemprop=keywords content="OpenResty,Lua,Redis"><meta property="og:type" content="article"><meta property="og:title" content="15 | 连接 Redis：基础篇"><meta property="og:description" content="掌握 lua-resty-redis 的安装与配置，熟悉常用命令操作，重点理解连接池的配置方式，以及 OpenResty 中 Redis 错误处理的规范写法。"><meta property="og:image" content="/imgs/zanehy.jpg"><meta property="og:image:width" content="312"><meta property="og:image:height" content="312"><meta property="og:image:type" content="image/jpeg/png/svg/jpg"><meta property="og:url" content="https://zanehy.github.io/blog/openresty-15-redis-basic/"><meta property="og:site_name" content="红岩 | 个人博客"><meta property="og:locale" content="zh-CN"><meta property="article:author" content="红岩"><meta property="article:published_time" content="2026-03-23 18:57:00 +0800 CST"><meta property="article:modified_time" content="2026-03-23 18:57:00 +0800 CST"><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/font-awesome/6.1.2/css/all.min.css><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/animate.css/3.1.1/animate.min.css><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/viewerjs/1.11.0/viewer.min.css><link rel=stylesheet href=/css/main.min.33a74da2976ebbac6b4f1852845dfaad330b3fbd6c4e4b31ec4820969c3d5038.css><script type=text/javascript>(function(){localDB={set:function(e,t,n){if(n===0)return;const s=new Date,o=n*864e5,i={value:t,expiry:s.getTime()+o};localStorage.setItem(e,JSON.stringify(i))},get:function(e){const t=localStorage.getItem(e);if(!t)return void 0;const n=JSON.parse(t),s=new Date;return s.getTime()>n.expiry?(localStorage.removeItem(e),void 0):n.value}},theme={active:function(){const e=localDB.get("theme");if(e==null)return;theme.toggle(e),window.matchMedia("(prefers-color-scheme: dark)").addListener(function(e){theme.toggle(e.matches?"dark":"light")})},toggle:function(e){document.documentElement.setAttribute("data-theme",e),localDB.set("theme",e,2);const t=document.querySelector("iframe.giscus-frame");if(t){const n={setConfig:{theme:e}};t.contentWindow.postMessage({giscus:n},"https://giscus.app")}}},theme.active()})(window)</script><script class=next-config data-name=page type=application/json>{"comments":false,"isHome":false,"isPage":true,"path":"openresty-15-redis-basic","permalink":"https://zanehy.github.io/blog/openresty-15-redis-basic/","title":"15 | 连接 Redis：基础篇","waline":{"js":[{"alias":"waline","alias_name":"@waline/client","file":"dist/pageview.js","name":"pageview","version":"2.13.0"},{"alias":"waline","alias_name":"@waline/client","file":"dist/comment.js","name":"comment","version":"2.13.0"}]}}</script><script type=text/javascript>document.addEventListener("DOMContentLoaded",()=>{var e=document.createElement("script");e.charset="UTF-8",e.src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js",e.async=!1,e.defer=!0,document.head.appendChild(e),e.onload=function(){NexT.utils.fmtBusuanzi()}})</script><title>15 | 连接 Redis：基础篇 - 红岩 | 个人博客</title><noscript><link rel=stylesheet href=/css/noscript.css></noscript></head><body itemscope itemtype=http://schema.org/WebPage class=use-motion><div class=headband></div><main class=main><header class=header itemscope itemtype=http://schema.org/WPHeader><div class=header-inner><div class=site-brand-container><div class=site-nav-toggle><div class=toggle aria-label role=button><span class=toggle-line></span>
+<span class=toggle-line></span>
+<span class=toggle-line></span></div></div><div class=site-meta><a href=/ class=brand rel=start><i class=logo-line></i><h1 class=site-title>红岩 | 个人博客</h1><i class=logo-line></i></a><p class=site-subtitle itemprop=description>记录生活，记录成长</p></div><div class=site-nav-right><div class="toggle popup-trigger"><i class="fa fa-search fa-fw fa-lg"></i></div></div></div><nav class=site-nav><ul class="main-menu menu"><li class="menu-item menu-item-home"><a href=/ class=hvr-icon-pulse rel=section><i class="fa fa-home hvr-icon"></i>首页</a></li><li class="menu-item menu-item-about"><a href=/about.html class=hvr-icon-pulse rel=section><i class="fa fa-user hvr-icon"></i>关于</a></li><li class="menu-item menu-item-my_blog"><a href=/blog/ class=hvr-icon-pulse rel=section><i class="fa fa-blog hvr-icon"></i>技术博客</a></li><li class="menu-item menu-item-my_life"><a href=/life/ class=hvr-icon-pulse rel=section><i class="fa fa-pizza-slice hvr-icon"></i>生活点滴</a></li><li class="menu-item menu-item-archives"><a href=/archives/ class=hvr-icon-pulse rel=section><i class="fa fa-archive hvr-icon"></i>归档日志
+<span class=badge>16</span></a></li><li class="menu-item menu-item-search"><a role=button class="popup-trigger hvr-icon-pulse"><i class="fa fa-search fa-fw hvr-icon"></i>搜索</a></li></ul></nav><div class=search-pop-overlay><div class="popup search-popup"><div class=search-header><span class=search-icon><i class="fa fa-search"></i></span><div class=search-input-container><input autocomplete=off autocapitalize=off maxlength=80 placeholder=搜索... spellcheck=false type=search class=search-input></div><span class=popup-btn-close role=button><i class="fa fa-times-circle"></i></span></div><div class="search-result-container no-result"><div class=search-result-icon><i class="fa fa-spinner fa-pulse fa-5x"></i></div></div></div></div></div><div class="toggle sidebar-toggle" role=button><span class=toggle-line></span>
+<span class=toggle-line></span>
+<span class=toggle-line></span></div><aside class=sidebar><div class="sidebar-inner sidebar-nav-active sidebar-toc-active"><ul class=sidebar-nav><li class=sidebar-nav-toc>文章目录</li><li class=sidebar-nav-overview>站点概览</li></ul><div class=sidebar-panel-container><div class="post-toc-wrap sidebar-panel"><div class="post-toc animated"><nav id=TableOfContents><ul><li><a href=#安装-lua-resty-redis>安装 lua-resty-redis</a></li><li><a href=#基本连接>基本连接</a></li><li><a href=#常用命令>常用命令</a><ul><li><a href=#string-操作>String 操作</a></li><li><a href=#hash-操作>Hash 操作</a></li><li><a href=#list-操作>List 操作</a></li><li><a href=#set-和-sorted-set>Set 和 Sorted Set</a></li></ul></li><li><a href=#连接池配置>连接池配置</a><ul><li><a href=#连接池的参数设置>连接池的参数设置</a></li></ul></li><li><a href=#错误处理规范>错误处理规范</a></li><li><a href=#一个封装好的-redis-工具模块>一个封装好的 Redis 工具模块</a></li><li><a href=#小结>小结</a></li></ul></nav></div></div><div class="site-overview-wrap sidebar-panel"><div class="site-author site-overview-item animated" itemprop=author itemscope itemtype=http://schema.org/Person><img class=site-author-image itemprop=image alt=红岩 src=/imgs/img-lazy-loading.gif data-src=/imgs/zanehy.jpg><p class=site-author-name itemprop=name>红岩</p><div class=site-description itemprop=description></div></div><div class="site-state-wrap site-overview-item animated"><nav class=site-state><div class="site-state-item site-state-posts"><a href=/archives/><span class=site-state-item-count>16</span>
+<span class=site-state-item-name>日志</span></a></div><div class="site-state-item site-state-categories"><a href=/categories/><span class=site-state-item-count>2</span>
+<span class=site-state-item-name>分类</span></a></div><div class="site-state-item site-state-tags"><a href=/tags/><span class=site-state-item-count>20</span>
+<span class=site-state-item-name>标签</span></a></div></nav></div><div class="links-of-social site-overview-item animated"></div></div></div></div><div id=siteinfo-card-widget class=sidebar-card-widget><div class=item-headline><i class="fas fa-chart-line"></i>
+<span>网站资讯</span></div><div class=siteinfo><div class=siteinfo-item><div class=item-name><i class="fa-solid fa-calendar-check"></i>已运行：</div><div class=item-count id=runTimes data-publishdate=2026-03-04T17:00:00+08:00></div></div><div class=siteinfo-item><div class=item-name><i class="fas fa fa-user"></i>总访客数：</div><div class=item-count id=busuanzi_value_site_uv><i class="fa fa-sync fa-spin"></i></div></div><div class=siteinfo-item><div class=item-name><i class="fas fa fa-eye"></i>页面浏览：</div><div class=item-count id=busuanzi_value_site_pv><i class="fa fa-sync fa-spin"></i></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-font"></i>总字数：</div><div class=item-count id=wordsCount data-count=34858></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-mug-hot"></i>阅读约：</div><div class=item-count id=readTimes data-times=79></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-clock-rotate-left"></i>最后更新于：</div><div class=item-count id=last-push-date data-lastpushdate=2026-03-23T18:57:00+08:00></div></div></div></div></aside><div class=sidebar-dimmer></div></header><div class=tool-buttons><div id=toggle-theme class=button title=深浅模式切换><i class="fas fa-adjust"></i></div><div class=back-to-top role=button title=返回顶部><i class="fa fa-arrow-up"></i>
+<span>0%</span></div></div><div class=reading-progress-bar></div><a role=button class="book-mark-link book-mark-link-fixed"></a><a href=https://github.com/zanehy rel="noopener external nofollow noreferrer" target=_blank title="Follow me on GitHub" class="exturl github-corner"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0 0 115 115h15l12 27L250 250V0z"/><path d="M128.3 109C113.8 99.7 119 89.6 119 89.6 122 82.7 120.5 78.6 120.5 78.6 119.2 72 123.4 76.3 123.4 76.3 127.3 80.9 125.5 87.3 125.5 87.3 122.9 97.6 130.6 101.9 134.4 103.2" fill="currentcolor" style="transform-origin:130px 106px" class="octo-arm"/><path d="M115 115C114.9 115.1 118.7 116.5 119.8 115.4l13.9-13.8C136.9 99.2 139.9 98.4 142.2 98.6 133.8 88 127.5 74.4 143.8 58 148.5 53.4 154 51.2 159.7 51 160.3 49.4 163.2 43.6 171.4 40.1 171.4 40.1 176.1 42.5 178.8 56.2 183.1 58.6 187.2 61.8 190.9 65.4 194.5 69 197.7 73.2 200.1 77.6 213.8 80.2 216.3 84.9 216.3 84.9 212.7 93.1 206.9 96 205.4 96.6 205.1 102.4 203 107.8 198.3 112.5 181.9 128.9 168.3 122.5 157.7 114.1 157.9 116.9 156.7 120.9 152.7 124.9L141 136.5C139.8 137.7 141.6 141.9 141.8 141.8z" fill="currentcolor" class="octo-body"/></svg>
+</a><script type=text/javascript src=//sidecar.gitter.im/dist/sidecar.v1.js async></script><script type=text/javascript>((window.gitter={}).chat={}).options={room:"hugo-next/community"}</script><noscript><div class=noscript-warning>Theme NexT works best with JavaScript enabled</div></noscript><div class="main-inner post posts-expand"><div class=post-block><article itemscope itemtype=http://schema.org/Article class=post-content lang><link itemprop=mainEntityOfPage href=https://zanehy.github.io/blog/openresty-15-redis-basic/><span hidden itemprop=author itemscope itemtype=http://schema.org/Person><meta itemprop=image content="/imgs/zanehy.jpg"><meta itemprop=name content="红岩"></span><span hidden itemprop=publisher itemscope itemtype=http://schema.org/Organization><meta itemprop=name content="红岩"><meta itemprop=description content></span><span hidden itemprop=post itemscope itemtype=http://schema.org/CreativeWork><meta itemprop=name content="15 | 连接 Redis：基础篇"><meta itemprop=description content="掌握 lua-resty-redis 的安装与配置，熟悉常用命令操作，重点理解连接池的配置方式，以及 OpenResty 中 Redis 错误处理的规范写法。"></span><header class=post-header><h1 class=post-title itemprop="name headline">15 | 连接 Redis：基础篇</h1><div class=post-meta-container><div class=post-meta-items><span class=post-meta-item><span class=post-meta-item-icon><i class="far fa-calendar"></i>
+</span><span class=post-meta-item-text title=发表于>发表于：
+</span><time title="创建时间：2026-03-23 18:57:00 +0800 CST" itemprop="dateCreated datePublished" datetime="2026-03-23 18:57:00 +0800 CST">2026-03-23
+</time></span><span class=post-meta-item><span class=post-meta-item-icon><i class="far fa-folder-open"></i>
+</span><span class=post-meta-item-text title=分类于>分类于：
+</span><span itemprop=about itemscope itemtype=http://schema.org/Thing><a href=/categories/openresty itemprop=url rel=index><span itemprop=name>OpenResty</span></a></span></span></div><div class=post-meta-items><span class=post-meta-item title=字数><span class=post-meta-item-icon><i class="far fa-file-word"></i>
+</span><span class=post-meta-item-text>字数：</span>
+<span>1804</span>
+</span><span class=post-meta-item title=阅读><span class=post-meta-item-icon><i class="far fa-clock"></i>
+</span><span class=post-meta-item-text>阅读：&ap;</span>
+<span>4分钟</span>
+</span><span class=post-meta-item title=浏览><span class=post-meta-item-icon><i class="far fa-eye"></i>
+</span><span class=post-meta-item-text>浏览：
+</span><span id=busuanzi_value_page_pv data-path=/blog/openresty-15-redis-basic/><i class="fa fa-sync fa-spin"></i></span></span></div></div></header><div class="post-body autonumber" itemprop=articleBody><p>从这篇开始进入第四阶段：中间件与存储。Redis 是 OpenResty 项目里最常见的搭档，几乎所有需要缓存、计数、会话存储的场景都少不了它。这篇先把基础打牢：如何连接、常用命令怎么用、连接池怎么配置。</p><h2 id=安装-lua-resty-redis>安装 lua-resty-redis
+<a class=header-anchor href=#%e5%ae%89%e8%a3%85-lua-resty-redis></a></h2><p><code>lua-resty-redis</code> 是 OpenResty 官方提供的 Redis 客户端，基于 cosocket，完全非阻塞。OpenResty 发行版通常已经内置，不需要单独安装。</p><p>检查是否可用：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#66d9ef>local</span> ok, redis <span style=color:#f92672>=</span> pcall(require, <span style=color:#e6db74>&#34;resty.redis&#34;</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> ok <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>    print(<span style=color:#e6db74>&#34;lua-resty-redis available&#34;</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span></code></pre></div><p>如果没有，可以用 OPM（OpenResty Package Manager）安装：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-bash data-lang=bash><span style=display:flex><span>opm get openresty/lua-resty-redis
+</span></span></code></pre></div><h2 id=基本连接>基本连接
+<a class=header-anchor href=#%e5%9f%ba%e6%9c%ac%e8%bf%9e%e6%8e%a5></a></h2><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#66d9ef>local</span> redis <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;resty.redis&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> red <span style=color:#f92672>=</span> redis:new()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 设置超时（连接超时、读超时、发送超时，单位毫秒）</span>
+</span></span><span style=display:flex><span>red:set_timeouts(<span style=color:#ae81ff>1000</span>, <span style=color:#ae81ff>1000</span>, <span style=color:#ae81ff>1000</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 连接</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> ok, err <span style=color:#f92672>=</span> red:connect(<span style=color:#e6db74>&#34;127.0.0.1&#34;</span>, <span style=color:#ae81ff>6379</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> ok <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>    ngx.log(ngx.ERR, <span style=color:#e6db74>&#34;failed to connect redis: &#34;</span>, err)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> ngx.exit(<span style=color:#ae81ff>500</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 如果 Redis 设置了密码</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> ok, err <span style=color:#f92672>=</span> red:auth(<span style=color:#e6db74>&#34;your_password&#34;</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> ok <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>    ngx.log(ngx.ERR, <span style=color:#e6db74>&#34;redis auth failed: &#34;</span>, err)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> ngx.exit(<span style=color:#ae81ff>500</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 选择数据库（默认是 0）</span>
+</span></span><span style=display:flex><span>red:select(<span style=color:#ae81ff>1</span>)
+</span></span></code></pre></div><h2 id=常用命令>常用命令
+<a class=header-anchor href=#%e5%b8%b8%e7%94%a8%e5%91%bd%e4%bb%a4></a></h2><p><code>lua-resty-redis</code> 的 API 设计很直接——Redis 命令名就是方法名，参数一一对应。</p><h3 id=string-操作>String 操作
+<a class=header-anchor href=#string-%e6%93%8d%e4%bd%9c></a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- SET key value [EX seconds] [NX]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> ok, err <span style=color:#f92672>=</span> red:set(<span style=color:#e6db74>&#34;username&#34;</span>, <span style=color:#e6db74>&#34;alice&#34;</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> ok, err <span style=color:#f92672>=</span> red:set(<span style=color:#e6db74>&#34;session:abc&#34;</span>, <span style=color:#e6db74>&#34;user_data&#34;</span>, <span style=color:#e6db74>&#34;EX&#34;</span>, <span style=color:#ae81ff>3600</span>)  <span style=color:#75715e>-- 带过期时间</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> ok, err <span style=color:#f92672>=</span> red:set(<span style=color:#e6db74>&#34;lock:key&#34;</span>, <span style=color:#ae81ff>1</span>, <span style=color:#e6db74>&#34;NX&#34;</span>, <span style=color:#e6db74>&#34;EX&#34;</span>, <span style=color:#ae81ff>30</span>)           <span style=color:#75715e>-- NX：不存在才设置</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- GET</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> val, err <span style=color:#f92672>=</span> red:get(<span style=color:#e6db74>&#34;username&#34;</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> val <span style=color:#f92672>==</span> ngx.null <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- key 不存在时返回 ngx.null，不是 nil</span>
+</span></span><span style=display:flex><span>    val <span style=color:#f92672>=</span> <span style=color:#66d9ef>nil</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- MGET 批量获取</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> vals, err <span style=color:#f92672>=</span> red:mget(<span style=color:#e6db74>&#34;key1&#34;</span>, <span style=color:#e6db74>&#34;key2&#34;</span>, <span style=color:#e6db74>&#34;key3&#34;</span>)
+</span></span><span style=display:flex><span><span style=color:#75715e>-- vals 是数组，不存在的 key 对应 ngx.null</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- INCR / INCRBY</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> new_val, err <span style=color:#f92672>=</span> red:incr(<span style=color:#e6db74>&#34;counter&#34;</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> new_val, err <span style=color:#f92672>=</span> red:incrby(<span style=color:#e6db74>&#34;counter&#34;</span>, <span style=color:#ae81ff>5</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> new_val, err <span style=color:#f92672>=</span> red:incrbyfloat(<span style=color:#e6db74>&#34;score&#34;</span>, <span style=color:#ae81ff>1.5</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- DEL</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> count, err <span style=color:#f92672>=</span> red:del(<span style=color:#e6db74>&#34;key1&#34;</span>, <span style=color:#e6db74>&#34;key2&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- EXISTS</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> exists, err <span style=color:#f92672>=</span> red:exists(<span style=color:#e6db74>&#34;username&#34;</span>)  <span style=color:#75715e>-- 1 表示存在，0 表示不存在</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- EXPIRE / TTL</span>
+</span></span><span style=display:flex><span>red:expire(<span style=color:#e6db74>&#34;session:abc&#34;</span>, <span style=color:#ae81ff>1800</span>)   <span style=color:#75715e>-- 重置过期时间</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> ttl, err <span style=color:#f92672>=</span> red:ttl(<span style=color:#e6db74>&#34;session:abc&#34;</span>)  <span style=color:#75715e>-- 剩余秒数，-1 永不过期，-2 不存在</span>
+</span></span></code></pre></div><h3 id=hash-操作>Hash 操作
+<a class=header-anchor href=#hash-%e6%93%8d%e4%bd%9c></a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- HSET</span>
+</span></span><span style=display:flex><span>red:hset(<span style=color:#e6db74>&#34;user:123&#34;</span>, <span style=color:#e6db74>&#34;name&#34;</span>, <span style=color:#e6db74>&#34;alice&#34;</span>)
+</span></span><span style=display:flex><span>red:hset(<span style=color:#e6db74>&#34;user:123&#34;</span>, <span style=color:#e6db74>&#34;age&#34;</span>, <span style=color:#e6db74>&#34;28&#34;</span>)
+</span></span><span style=display:flex><span>red:hmset(<span style=color:#e6db74>&#34;user:123&#34;</span>, <span style=color:#e6db74>&#34;name&#34;</span>, <span style=color:#e6db74>&#34;alice&#34;</span>, <span style=color:#e6db74>&#34;age&#34;</span>, <span style=color:#e6db74>&#34;28&#34;</span>, <span style=color:#e6db74>&#34;email&#34;</span>, <span style=color:#e6db74>&#34;alice@example.com&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- HGET / HMGET</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> name <span style=color:#f92672>=</span> red:hget(<span style=color:#e6db74>&#34;user:123&#34;</span>, <span style=color:#e6db74>&#34;name&#34;</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> vals <span style=color:#f92672>=</span> red:hmget(<span style=color:#e6db74>&#34;user:123&#34;</span>, <span style=color:#e6db74>&#34;name&#34;</span>, <span style=color:#e6db74>&#34;age&#34;</span>, <span style=color:#e6db74>&#34;email&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- HGETALL（返回 field-value 交替的数组）</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> data <span style=color:#f92672>=</span> red:hgetall(<span style=color:#e6db74>&#34;user:123&#34;</span>)
+</span></span><span style=display:flex><span><span style=color:#75715e>-- data = {&#34;name&#34;, &#34;alice&#34;, &#34;age&#34;, &#34;28&#34;, &#34;email&#34;, &#34;alice@example.com&#34;}</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 转换为 table</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>hgetall_to_table</span>(arr)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> arr <span style=color:#f92672>==</span> ngx.null <span style=color:#66d9ef>then</span> <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>nil</span> <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> t <span style=color:#f92672>=</span> {}
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> i <span style=color:#f92672>=</span> <span style=color:#ae81ff>1</span>, <span style=color:#f92672>#</span>arr, <span style=color:#ae81ff>2</span> <span style=color:#66d9ef>do</span>
+</span></span><span style=display:flex><span>        t[arr[i]] <span style=color:#f92672>=</span> arr[i <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span>]
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> t
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> user <span style=color:#f92672>=</span> hgetall_to_table(data)
+</span></span><span style=display:flex><span><span style=color:#75715e>-- user = {name=&#34;alice&#34;, age=&#34;28&#34;, email=&#34;alice@example.com&#34;}</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- HDEL / HEXISTS</span>
+</span></span><span style=display:flex><span>red:hdel(<span style=color:#e6db74>&#34;user:123&#34;</span>, <span style=color:#e6db74>&#34;age&#34;</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> ok <span style=color:#f92672>=</span> red:hexists(<span style=color:#e6db74>&#34;user:123&#34;</span>, <span style=color:#e6db74>&#34;name&#34;</span>)
+</span></span></code></pre></div><h3 id=list-操作>List 操作
+<a class=header-anchor href=#list-%e6%93%8d%e4%bd%9c></a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- LPUSH / RPUSH（左/右插入）</span>
+</span></span><span style=display:flex><span>red:lpush(<span style=color:#e6db74>&#34;task_queue&#34;</span>, <span style=color:#e6db74>&#34;task1&#34;</span>)
+</span></span><span style=display:flex><span>red:rpush(<span style=color:#e6db74>&#34;task_queue&#34;</span>, <span style=color:#e6db74>&#34;task2&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- LPOP / RPOP（左/右弹出）</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> task <span style=color:#f92672>=</span> red:lpop(<span style=color:#e6db74>&#34;task_queue&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- LRANGE（获取范围，0 -1 获取全部）</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> tasks <span style=color:#f92672>=</span> red:lrange(<span style=color:#e6db74>&#34;task_queue&#34;</span>, <span style=color:#ae81ff>0</span>, <span style=color:#f92672>-</span><span style=color:#ae81ff>1</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- LLEN</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> len <span style=color:#f92672>=</span> red:llen(<span style=color:#e6db74>&#34;task_queue&#34;</span>)
+</span></span></code></pre></div><h3 id=set-和-sorted-set>Set 和 Sorted Set
+<a class=header-anchor href=#set-%e5%92%8c-sorted-set></a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- SET（集合）</span>
+</span></span><span style=display:flex><span>red:sadd(<span style=color:#e6db74>&#34;tags&#34;</span>, <span style=color:#e6db74>&#34;lua&#34;</span>, <span style=color:#e6db74>&#34;openresty&#34;</span>, <span style=color:#e6db74>&#34;nginx&#34;</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> members <span style=color:#f92672>=</span> red:smembers(<span style=color:#e6db74>&#34;tags&#34;</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> is_member <span style=color:#f92672>=</span> red:sismember(<span style=color:#e6db74>&#34;tags&#34;</span>, <span style=color:#e6db74>&#34;lua&#34;</span>)  <span style=color:#75715e>-- 1 或 0</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- ZSET（有序集合）</span>
+</span></span><span style=display:flex><span>red:zadd(<span style=color:#e6db74>&#34;leaderboard&#34;</span>, <span style=color:#ae81ff>100</span>, <span style=color:#e6db74>&#34;alice&#34;</span>)
+</span></span><span style=display:flex><span>red:zadd(<span style=color:#e6db74>&#34;leaderboard&#34;</span>, <span style=color:#ae81ff>200</span>, <span style=color:#e6db74>&#34;bob&#34;</span>)
+</span></span><span style=display:flex><span>red:zadd(<span style=color:#e6db74>&#34;leaderboard&#34;</span>, <span style=color:#ae81ff>150</span>, <span style=color:#e6db74>&#34;charlie&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 按分数范围获取（从低到高）</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> members <span style=color:#f92672>=</span> red:zrangebyscore(<span style=color:#e6db74>&#34;leaderboard&#34;</span>, <span style=color:#ae81ff>0</span>, <span style=color:#ae81ff>200</span>)
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 从高到低</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> top3 <span style=color:#f92672>=</span> red:zrevrange(<span style=color:#e6db74>&#34;leaderboard&#34;</span>, <span style=color:#ae81ff>0</span>, <span style=color:#ae81ff>2</span>, <span style=color:#e6db74>&#34;WITHSCORES&#34;</span>)
+</span></span></code></pre></div><h2 id=连接池配置>连接池配置
+<a class=header-anchor href=#%e8%bf%9e%e6%8e%a5%e6%b1%a0%e9%85%8d%e7%bd%ae></a></h2><p>这是使用 <code>lua-resty-redis</code> 最重要的一个环节，<strong>每次用完连接后必须归还连接池</strong>，而不是直接关闭。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- 错误做法：直接关闭连接</span>
+</span></span><span style=display:flex><span>red:close()   <span style=color:#75715e>-- 每次都销毁连接，下次重新建立，开销很大</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 正确做法：放回连接池</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> ok, err <span style=color:#f92672>=</span> red:set_keepalive(max_idle_timeout, pool_size)
+</span></span><span style=display:flex><span><span style=color:#75715e>-- max_idle_timeout：连接在池中最长空闲时间（毫秒）</span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- pool_size：连接池大小（每个 worker 的连接数上限）</span>
+</span></span></code></pre></div><p>完整的使用模板：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#66d9ef>local</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>get_redis</span>()
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> redis <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;resty.redis&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> red <span style=color:#f92672>=</span> redis:new()
+</span></span><span style=display:flex><span>    red:set_timeouts(<span style=color:#ae81ff>1000</span>, <span style=color:#ae81ff>1000</span>, <span style=color:#ae81ff>1000</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> ok, err <span style=color:#f92672>=</span> red:connect(<span style=color:#e6db74>&#34;127.0.0.1&#34;</span>, <span style=color:#ae81ff>6379</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> ok <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>nil</span>, <span style=color:#e6db74>&#34;connect failed: &#34;</span> <span style=color:#f92672>..</span> (err <span style=color:#f92672>or</span> <span style=color:#e6db74>&#34;&#34;</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> red
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>release_redis</span>(red)
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 放回连接池：空闲超时 10 秒，池大小 100</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> ok, err <span style=color:#f92672>=</span> red:set_keepalive(<span style=color:#ae81ff>10000</span>, <span style=color:#ae81ff>100</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> ok <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        ngx.log(ngx.WARN, <span style=color:#e6db74>&#34;failed to set keepalive: &#34;</span>, err)
+</span></span><span style=display:flex><span>        red:close()
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 使用</span>
+</span></span><span style=display:flex><span>content_by_lua_block {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> red, err <span style=color:#f92672>=</span> get_redis()
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> red <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        ngx.log(ngx.ERR, err)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> ngx.exit(<span style=color:#ae81ff>500</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> val, err <span style=color:#f92672>=</span> red:get(<span style=color:#e6db74>&#34;some_key&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    release_redis(red)   <span style=color:#75715e>-- 无论成功失败，都要归还</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> err <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        ngx.log(ngx.ERR, <span style=color:#e6db74>&#34;redis get failed: &#34;</span>, err)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> ngx.exit(<span style=color:#ae81ff>500</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    ngx.say(val <span style=color:#f92672>~=</span> ngx.null <span style=color:#f92672>and</span> val <span style=color:#f92672>or</span> <span style=color:#e6db74>&#34;not found&#34;</span>)
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h3 id=连接池的参数设置>连接池的参数设置
+<a class=header-anchor href=#%e8%bf%9e%e6%8e%a5%e6%b1%a0%e7%9a%84%e5%8f%82%e6%95%b0%e8%ae%be%e7%bd%ae></a></h3><p>连接池大小的参考计算方式：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-fallback data-lang=fallback><span style=display:flex><span>pool_size = (worker 可承受的最大并发数) / (单个请求的平均 Redis 操作耗时 / 请求平均耗时)
+</span></span></code></pre></div><p>实际上，经验值是：每个 worker 配置 50～200 的连接池，根据业务压测调整。pool_size 不是越大越好——Redis 服务端也有最大连接数限制（<code>maxclients</code>），所有 worker 的连接数加起来不能超过这个值。</p><h2 id=错误处理规范>错误处理规范
+<a class=header-anchor href=#%e9%94%99%e8%af%af%e5%a4%84%e7%90%86%e8%a7%84%e8%8c%83></a></h2><p>OpenResty 的错误处理风格是返回值而不是异常。<code>lua-resty-redis</code> 的所有方法在失败时返回 <code>nil, err_string</code>：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#66d9ef>local</span> val, err <span style=color:#f92672>=</span> red:get(<span style=color:#e6db74>&#34;key&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 网络错误、命令执行错误</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> err <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>    ngx.log(ngx.ERR, <span style=color:#e6db74>&#34;redis get error: &#34;</span>, err)
+</span></span><span style=display:flex><span>    release_redis(red)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> ngx.exit(<span style=color:#ae81ff>500</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- key 不存在（不是错误，是正常情况）</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> val <span style=color:#f92672>==</span> ngx.null <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>    ngx.say(<span style=color:#e6db74>&#34;key not found&#34;</span>)
+</span></span><span style=display:flex><span>    release_redis(red)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 正常返回值</span>
+</span></span><span style=display:flex><span>ngx.say(val)
+</span></span><span style=display:flex><span>release_redis(red)
+</span></span></code></pre></div><p>特别注意 <code>ngx.null</code> 和 <code>nil</code> 的区别：</p><ul><li><code>val == nil</code> 表示 <code>get</code> 方法调用失败（err 不为空）</li><li><code>val == ngx.null</code> 表示命令执行成功，但 key 在 Redis 里不存在</li></ul><p>这两种情况处理方式完全不同，不能混淆。</p><h2 id=一个封装好的-redis-工具模块>一个封装好的 Redis 工具模块
+<a class=header-anchor href=#%e4%b8%80%e4%b8%aa%e5%b0%81%e8%a3%85%e5%a5%bd%e7%9a%84-redis-%e5%b7%a5%e5%85%b7%e6%a8%a1%e5%9d%97></a></h2><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- lib/redis_util.lua</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> redis <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;resty.redis&#34;</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> ngx_log <span style=color:#f92672>=</span> ngx.log
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> ngx_ERR <span style=color:#f92672>=</span> ngx.ERR
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> _M <span style=color:#f92672>=</span> {}
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> mt <span style=color:#f92672>=</span> { __index <span style=color:#f92672>=</span> _M }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> REDIS_HOST    <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;127.0.0.1&#34;</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> REDIS_PORT    <span style=color:#f92672>=</span> <span style=color:#ae81ff>6379</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> TIMEOUT_MS    <span style=color:#f92672>=</span> <span style=color:#ae81ff>1000</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> KEEPALIVE_MS  <span style=color:#f92672>=</span> <span style=color:#ae81ff>10000</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> POOL_SIZE     <span style=color:#f92672>=</span> <span style=color:#ae81ff>100</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>function</span> <span style=color:#a6e22e>_M</span>.<span style=color:#a6e22e>new</span>()
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> red <span style=color:#f92672>=</span> redis:new()
+</span></span><span style=display:flex><span>    red:set_timeouts(TIMEOUT_MS, TIMEOUT_MS, TIMEOUT_MS)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> ok, err <span style=color:#f92672>=</span> red:connect(REDIS_HOST, REDIS_PORT)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> ok <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>nil</span>, <span style=color:#e6db74>&#34;redis connect failed: &#34;</span> <span style=color:#f92672>..</span> err
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> setmetatable({ red <span style=color:#f92672>=</span> red }, mt)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>function</span> <span style=color:#a6e22e>_M</span>:<span style=color:#a6e22e>get</span>(key)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> val, err <span style=color:#f92672>=</span> self.red:get(key)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> err <span style=color:#66d9ef>then</span> <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>nil</span>, err <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> val <span style=color:#f92672>==</span> ngx.null <span style=color:#66d9ef>then</span> <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>nil</span> <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> val
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>function</span> <span style=color:#a6e22e>_M</span>:<span style=color:#a6e22e>set</span>(key, val, ttl)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> ttl <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> self.red:set(key, val, <span style=color:#e6db74>&#34;EX&#34;</span>, ttl)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> self.red:set(key, val)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>function</span> <span style=color:#a6e22e>_M</span>:<span style=color:#a6e22e>del</span>(key)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> self.red:del(key)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>function</span> <span style=color:#a6e22e>_M</span>:<span style=color:#a6e22e>close</span>()
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> ok, err <span style=color:#f92672>=</span> self.red:set_keepalive(KEEPALIVE_MS, POOL_SIZE)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> ok <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        ngx_log(ngx_ERR, <span style=color:#e6db74>&#34;redis keepalive failed: &#34;</span>, err)
+</span></span><span style=display:flex><span>        self.red:close()
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>return</span> _M
+</span></span></code></pre></div><p>使用：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#66d9ef>local</span> redis_util <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;lib.redis_util&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> r, err <span style=color:#f92672>=</span> redis_util.new()
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> r <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> ngx.exit(<span style=color:#ae81ff>500</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> val <span style=color:#f92672>=</span> r:get(<span style=color:#e6db74>&#34;my_key&#34;</span>)
+</span></span><span style=display:flex><span>r:set(<span style=color:#e6db74>&#34;another_key&#34;</span>, <span style=color:#e6db74>&#34;value&#34;</span>, <span style=color:#ae81ff>300</span>)
+</span></span><span style=display:flex><span>r:close()
+</span></span></code></pre></div><h2 id=小结>小结
+<a class=header-anchor href=#%e5%b0%8f%e7%bb%93></a></h2><p><code>lua-resty-redis</code> 的使用要掌握三件事：</p><ul><li>连接和基本命令操作——API 和 Redis 命令一一对应，上手很快</li><li><strong>连接池</strong>——用完连接必须 <code>set_keepalive</code> 归还，这是性能的关键</li><li><strong><code>ngx.null</code> 的判断</strong>——key 不存在时返回 <code>ngx.null</code>，不是 <code>nil</code>，不能混淆</li></ul><p>下一篇继续 Redis 进阶：Pipeline 批量操作、Pub/Sub 订阅，以及分布式 Session 和 Token 黑名单的实战案例。</p></div><footer class=post-footer><div class=post-tags><a href=/tags/openresty>OpenResty
+</a><a href=/tags/lua>Lua
+</a><a href=/tags/redis>Redis</a></div><div class=addthis_inline_share_toolbox style=text-align:center></div><hr><div class=post-copyright><img src=/imgs/cc/cc.svg width=75 height=75 align=right alt=共享知识><ul><li class=post-copyright-title><strong>文章标题：</strong>
+15 | 连接 Redis：基础篇</li><li class=post-copyright-author><strong>本文作者： </strong>红岩</li><li class=post-copyright-link><strong>本文链接：</strong>
+<a id=post-cr-link href=https://zanehy.github.io/blog/openresty-15-redis-basic/ title="15 | 连接 Redis：基础篇">https://zanehy.github.io/blog/openresty-15-redis-basic/</a></li><li class=post-copyright-license><strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <i class="fab fa-fw fa-creative-commons"></i><a target=_blank href=https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh>BY-NC-SA</a> 许可协议。转载请注明出处！</li></ul></div><div class=post-nav><div class="post-nav-next post-nav-item"></div><div class="post-nav-prev post-nav-item"><a href=/blog/openresty-14-timers/ rel=prev title="14 | 定时器与后台任务">14 | 定时器与后台任务
+<i class="fa fa-chevron-right"></i></a></div></div></footer></article></div></div></main><footer class=footer><div class=footer-inner><div class=copyright>&copy;
+<span itemprop=copyrightYear>2024 - 2026
+</span><span class=with-love><i class="fa fa-heart"></i>
+</span><span class=author itemprop=copyrightHolder>红岩</span></div><div class=powered-by>由 <a href=https://gohugo.io title=0.123.7 target=_blank>Hugo</a> & <a href=https://github.com/hugo-next/hugo-theme-next title=4.5.3 target=_blank>Hugo NexT.Gemini</a> 强力驱动</div></div></footer><script type=text/javascript src=https://cdn.staticfile.org/animejs/3.2.1/anime.min.js defer></script><script type=text/javascript src=https://cdn.staticfile.org/viewerjs/1.11.0/viewer.min.js defer></script><script class=next-config data-name=main type=application/json>{"bookmark":{"color":"#888","enable":true,"save":"manual"},"copybtn":true,"darkmode":true,"giscus":{"cfg":{"category":"Comments","categoryid":null,"emit":false,"inputposition":"top","mapping":"title","reactions":false,"repo":"username/repo-name","repoid":null,"theme":"preferred_color_scheme"},"js":"https://giscus.app/client.js"},"hostname":"https://zanehy.github.io/","i18n":{"ds_day":" 天前","ds_days":" 天 ","ds_hour":" 小时前","ds_hours":" 小时 ","ds_just":"刚刚","ds_min":" 分钟前","ds_mins":" 分钟","ds_month":" 个月前","ds_years":" 年 ","empty":"没有找到任何搜索结果：${query}","hits":"找到 ${hits} 个搜索结果","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","placeholder":"搜索..."},"lang":"zh-CN","lazyload":false,"localSearch":{"enable":true,"limit":1e3,"path":"/searchindexes.xml","preload":true,"topnperarticle":-1,"trigger":"auto","unescape":true},"motion":{"async":true,"enable":true,"transition":{"collheader":"fadeInLeft","postblock":"fadeIn","postbody":"fadeInDown","postheader":"fadeInDown","sidebar":"fadeInUp"}},"postmeta":{"comments":{"enable":true,"plugin":"waline"},"views":{"enable":true,"plugin":"busuanzi"}},"root":"/","scheme":"Gemini","sidebar":{"display":"post","offset":12,"padding":18,"position":"left","width":256},"vendor":{"plugins":"qiniu","router":"https://cdn.staticfile.org"},"version":"4.5.3","waline":{"cfg":{"emoji":false,"imguploader":false,"placeholder":"请文明发言哟 ヾ(≧▽≦*)o","reaction":true,"reactiontext":["点赞","踩一下","得意","不屑","尴尬","睡觉"],"reactiontitle":"你认为这篇文章怎么样？","requiredmeta":["nick","mail"],"serverurl":null,"sofa":"快来发表你的意见吧 (≧∀≦)ゞ","wordlimit":200},"css":{"alias":"waline","file":"dist/waline.css","name":"@waline/client","version":"2.13.0"},"js":{"alias":"waline","file":"dist/waline.js","name":"@waline/client","version":"2.13.0"}}}</script><script type=text/javascript src=/js/main.min.0b6f435ab2b781f04f78d578f42b492c126726d94b54a88d0af9aaf3c50c4457.js defer></script></body></html>
