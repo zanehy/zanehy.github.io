@@ -1,4 +1,13 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>20 | 日志系统设计</title><url>/blog/openresty-20-logging/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>日志</tag><tag>Kafka</tag><tag>实战</tag></tags><content type="html"><![CDATA[  日志是系统的眼睛。一个好的日志系统，不只是把信息写到文件里，还要考虑：格式是否方便机器解析、是否影响请求性能、如何与下游日志平台对接。这篇来系统地聊 OpenResty 的日志设计。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>21 | 网关架构设计</title><url>/blog/openresty-21-gateway-architecture/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>网关</tag><tag>架构设计</tag></tags><content type="html"> 前四个阶段把 OpenResty 的语言基础、核心 API、存储集成都学完了。从这篇开始，我们用这些知识从零手写一个具备生产能力的 API 网关。
+在写代码之前，先把架构想清楚。好的架构让后续扩展事半功倍，坏的架构则让每次改动都牵一发动全身。
+网关的核心职责 API 网关站在客户端和后端服务之间，承担以下职责：
+流量管控
+路由：根据请求路径、方法、Header 等分发到不同后端服务 负载均衡：在多个后端实例之间分配流量 限流：保护后端不被流量击垮 安全
+鉴权：验证请求方身份（JWT、API Key、OAuth） 认证信息传递：把用户信息注入请求头传给后端 防攻击：IP 黑名单、请求体大小限制 可观测性
+日志：记录每个请求的完整信息 监控指标：请求量、延迟、错误率 链路追踪：Trace ID 贯穿全链路 协议与格式转换
+请求/响应改写：添加/删除 Header、修改路径 灰度发布：按规则把部分流量路由到新版本 插件化架构 如果把路由、鉴权、限流、日志全部写死在主逻辑里，代码很快会变成一团乱麻。插件化架构把每个功能独立成一个插件，主流程只负责按顺序调用插件。
+请求到达 │ ▼ ┌─────────────────────────────────┐ │ 插件执行管道（access 阶段） │ │ 1. ip_blacklist（IP 黑名单） │ │ 2. rate_limit（限流） │ │ 3. auth（鉴权） │ │ 4. request_rewrite（请求改写） │ └────────────────┬────────────────┘ │ ▼ 转发到后端服务 │ ▼ ┌─────────────────────────────────┐ │ 插件执行管道（response 阶段） │ │ 5. response_rewrite（响应改写） │ │ 6. logging（日志记录） │ └─────────────────────────────────┘ 每个插件的接口统一：
+-- 插件接口约定 local Plugin = {} -- 插件名称 Plugin.name = &amp;amp;#34;my_plugin&amp;amp;#34; -- 插件优先级（数字越小越先执行） Plugin.priority = 100 -- access 阶段（处理请求） function …</content></entry><entry><title>20 | 日志系统设计</title><url>/blog/openresty-20-logging/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>日志</tag><tag>Kafka</tag><tag>实战</tag></tags><content type="html"><![CDATA[  日志是系统的眼睛。一个好的日志系统，不只是把信息写到文件里，还要考虑：格式是否方便机器解析、是否影响请求性能、如何与下游日志平台对接。这篇来系统地聊 OpenResty 的日志设计。
 结构化日志输出 传统的日志是人可读的文本，比如 Nginx 默认的 combined 格式：
 192.168.1.1 - - [10/Mar/2026:10:00:00 +0800] &amp;#34;GET /api/users HTTP/1.1&amp;#34; 200 1234 这种格式对人友好，但对机器不友好——解析时需要正则匹配，字段顺序固定，扩展字段麻烦。
 结构化日志用 JSON 格式，每行一个完整的日志对象：
