@@ -1,0 +1,322 @@
+<!doctype html><html lang=zh-CN data-theme=dark><head><meta charset=UTF-8><meta name=viewport content="width=device-width"><meta name=theme-color content="#222" media="(prefers-color-scheme: dark)"><meta name=generator content="Hugo 0.123.7"><link rel="shortcut icon" type=image/x-icon href=/imgs/icons/zanehy.ico><link rel=icon type=image/x-icon href=/imgs/icons/zanehy.ico><link rel=icon type=image/png sizes=16x16 href=/imgs/icons/zanehy_16x16.jpg><link rel=icon type=image/png sizes=32x32 href=/imgs/icons/zanehy_32_32.jpg><link rel=apple-touch-icon sizes=180x180 href=/imgs/zanehy.jpg><meta itemprop=name content="22 | 路由模块：动态路由"><meta itemprop=description content="实现 API 网关的路由引擎：前缀与正则匹配、从 Redis 加载路由配置、热更新不重启，以及动态选择 upstream 目标。"><meta itemprop=datePublished zgotmplz><meta itemprop=dateModified zgotmplz><meta itemprop=image content="https://zanehy.github.io/imgs/zanehy.jpg"><meta itemprop=keywords content="OpenResty,网关,路由"><meta property="og:type" content="article"><meta property="og:title" content="22 | 路由模块：动态路由"><meta property="og:description" content="实现 API 网关的路由引擎：前缀与正则匹配、从 Redis 加载路由配置、热更新不重启，以及动态选择 upstream 目标。"><meta property="og:image" content="/imgs/zanehy.jpg"><meta property="og:image:width" content="312"><meta property="og:image:height" content="312"><meta property="og:image:type" content="image/jpeg/png/svg/jpg"><meta property="og:url" content="https://zanehy.github.io/blog/openresty-22-dynamic-routing/"><meta property="og:site_name" content="红岩 | 个人博客"><meta property="og:locale" content="zh-CN"><meta property="article:author" content="红岩"><meta property="article:published_time" content="2026-03-10 12:00:00 +0800 CST"><meta property="article:modified_time" content="2026-03-10 12:00:00 +0800 CST"><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/font-awesome/6.1.2/css/all.min.css><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/animate.css/3.1.1/animate.min.css><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/viewerjs/1.11.0/viewer.min.css><link rel=stylesheet href=/css/main.min.33a74da2976ebbac6b4f1852845dfaad330b3fbd6c4e4b31ec4820969c3d5038.css><style type=text/css>.post-footer,.flinks-list-footer hr:after{content:"~ 我可是有底线的哟 ~"}</style><script type=text/javascript>(function(){localDB={set:function(e,t,n){if(n===0)return;const s=new Date,o=n*864e5,i={value:t,expiry:s.getTime()+o};localStorage.setItem(e,JSON.stringify(i))},get:function(e){const t=localStorage.getItem(e);if(!t)return void 0;const n=JSON.parse(t),s=new Date;return s.getTime()>n.expiry?(localStorage.removeItem(e),void 0):n.value}},theme={active:function(){const e=localDB.get("theme");if(e==null)return;theme.toggle(e),window.matchMedia("(prefers-color-scheme: dark)").addListener(function(e){theme.toggle(e.matches?"dark":"light")})},toggle:function(e){document.documentElement.setAttribute("data-theme",e),localDB.set("theme",e,2);const t=document.querySelector("iframe.giscus-frame");if(t){const n={setConfig:{theme:e}};t.contentWindow.postMessage({giscus:n},"https://giscus.app")}}},theme.active()})(window)</script><script class=next-config data-name=page type=application/json>{"comments":false,"isHome":false,"isPage":true,"path":"openresty-22-dynamic-routing","permalink":"https://zanehy.github.io/blog/openresty-22-dynamic-routing/","title":"22 | 路由模块：动态路由","waline":{"js":[{"alias":"waline","alias_name":"@waline/client","file":"dist/pageview.js","name":"pageview","version":"2.13.0"},{"alias":"waline","alias_name":"@waline/client","file":"dist/comment.js","name":"comment","version":"2.13.0"}]}}</script><script type=text/javascript>document.addEventListener("DOMContentLoaded",()=>{var e=document.createElement("script");e.charset="UTF-8",e.src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js",e.async=!1,e.defer=!0,document.head.appendChild(e),e.onload=function(){NexT.utils.fmtBusuanzi()}})</script><title>22 | 路由模块：动态路由 - 红岩 | 个人博客</title><noscript><link rel=stylesheet href=/css/noscript.css></noscript></head><body itemscope itemtype=http://schema.org/WebPage class=use-motion><div class=headband></div><main class=main><header class=header itemscope itemtype=http://schema.org/WPHeader><div class=header-inner><div class=site-brand-container><div class=site-nav-toggle><div class=toggle aria-label role=button><span class=toggle-line></span>
+<span class=toggle-line></span>
+<span class=toggle-line></span></div></div><div class=site-meta><a href=/ class=brand rel=start><i class=logo-line></i><h1 class=site-title>红岩 | 个人博客</h1><i class=logo-line></i></a><p class=site-subtitle itemprop=description>记录生活，记录成长</p></div><div class=site-nav-right><div class="toggle popup-trigger"><i class="fa fa-search fa-fw fa-lg"></i></div></div></div><nav class=site-nav><ul class="main-menu menu"><li class="menu-item menu-item-home"><a href=/ class=hvr-icon-pulse rel=section><i class="fa fa-home hvr-icon"></i>首页</a></li><li class="menu-item menu-item-about"><a href=/about.html class=hvr-icon-pulse rel=section><i class="fa fa-user hvr-icon"></i>关于</a></li><li class="menu-item menu-item-my_blog"><a href=/blog/ class=hvr-icon-pulse rel=section><i class="fa fa-blog hvr-icon"></i>技术博客</a></li><li class="menu-item menu-item-my_life"><a href=/life/ class=hvr-icon-pulse rel=section><i class="fa fa-pizza-slice hvr-icon"></i>生活点滴</a></li><li class="menu-item menu-item-archives"><a href=/archives/ class=hvr-icon-pulse rel=section><i class="fa fa-archive hvr-icon"></i>归档日志
+<span class=badge>23</span></a></li><li class="menu-item menu-item-search"><a role=button class="popup-trigger hvr-icon-pulse"><i class="fa fa-search fa-fw hvr-icon"></i>搜索</a></li></ul></nav><div class=search-pop-overlay><div class="popup search-popup"><div class=search-header><span class=search-icon><i class="fa fa-search"></i></span><div class=search-input-container><input autocomplete=off autocapitalize=off maxlength=80 placeholder=搜索... spellcheck=false type=search class=search-input></div><span class=popup-btn-close role=button><i class="fa fa-times-circle"></i></span></div><div class="search-result-container no-result"><div class=search-result-icon><i class="fa fa-spinner fa-pulse fa-5x"></i></div></div></div></div></div><div class="toggle sidebar-toggle" role=button><span class=toggle-line></span>
+<span class=toggle-line></span>
+<span class=toggle-line></span></div><aside class=sidebar><div class="sidebar-inner sidebar-nav-active sidebar-toc-active"><ul class=sidebar-nav><li class=sidebar-nav-toc>文章目录</li><li class=sidebar-nav-overview>站点概览</li></ul><div class=sidebar-panel-container><div class="post-toc-wrap sidebar-panel"><div class="post-toc animated"><nav id=TableOfContents><ul><li><a href=#路由匹配策略>路由匹配策略</a></li><li><a href=#从-redis-加载路由配置>从 Redis 加载路由配置</a></li><li><a href=#热更新路由>热更新路由</a></li><li><a href=#upstream-动态选择>upstream 动态选择</a></li><li><a href=#把路由结果传递给-balancer>把路由结果传递给 balancer</a></li><li><a href=#路由调试接口>路由调试接口</a></li><li><a href=#小结>小结</a></li></ul></nav></div></div><div class="site-overview-wrap sidebar-panel"><div class="site-author site-overview-item animated" itemprop=author itemscope itemtype=http://schema.org/Person><img class=site-author-image itemprop=image alt=红岩 src=/imgs/img-lazy-loading.gif data-src=/imgs/zanehy.jpg><p class=site-author-name itemprop=name>红岩</p><div class=site-description itemprop=description></div></div><div class="site-state-wrap site-overview-item animated"><nav class=site-state><div class="site-state-item site-state-posts"><a href=/archives/><span class=site-state-item-count>23</span>
+<span class=site-state-item-name>日志</span></a></div><div class="site-state-item site-state-categories"><a href=/categories/><span class=site-state-item-count>2</span>
+<span class=site-state-item-name>分类</span></a></div><div class="site-state-item site-state-tags"><a href=/tags/><span class=site-state-item-count>29</span>
+<span class=site-state-item-name>标签</span></a></div></nav></div><div class="links-of-social site-overview-item animated"></div></div></div></div><div id=siteinfo-card-widget class=sidebar-card-widget><div class=item-headline><i class="fas fa-chart-line"></i>
+<span>网站资讯</span></div><div class=siteinfo><div class=siteinfo-item><div class=item-name><i class="fa-solid fa-calendar-check"></i>已运行：</div><div class=item-count id=runTimes data-publishdate=2026-03-04T17:00:00+08:00></div></div><div class=siteinfo-item><div class=item-name><i class="fas fa fa-user"></i>总访客数：</div><div class=item-count id=busuanzi_value_site_uv><i class="fa fa-sync fa-spin"></i></div></div><div class=siteinfo-item><div class=item-name><i class="fas fa fa-eye"></i>页面浏览：</div><div class=item-count id=busuanzi_value_site_pv><i class="fa fa-sync fa-spin"></i></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-font"></i>总字数：</div><div class=item-count id=wordsCount data-count=46934></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-mug-hot"></i>阅读约：</div><div class=item-count id=readTimes data-times=108></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-clock-rotate-left"></i>最后更新于：</div><div class=item-count id=last-push-date data-lastpushdate=2026-03-30T01:07:07+08:00></div></div></div></div></aside><div class=sidebar-dimmer></div></header><div class=tool-buttons><div id=toggle-theme class=button title=深浅模式切换><i class="fas fa-adjust"></i></div><div class=back-to-top role=button title=返回顶部><i class="fa fa-arrow-up"></i>
+<span>0%</span></div></div><div class=reading-progress-bar></div><a role=button class="book-mark-link book-mark-link-fixed"></a><a href=https://github.com/zanehy rel="noopener external nofollow noreferrer" target=_blank title="Follow me on GitHub" class="exturl github-corner"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0 0 115 115h15l12 27L250 250V0z"/><path d="M128.3 109C113.8 99.7 119 89.6 119 89.6 122 82.7 120.5 78.6 120.5 78.6 119.2 72 123.4 76.3 123.4 76.3 127.3 80.9 125.5 87.3 125.5 87.3 122.9 97.6 130.6 101.9 134.4 103.2" fill="currentcolor" style="transform-origin:130px 106px" class="octo-arm"/><path d="M115 115C114.9 115.1 118.7 116.5 119.8 115.4l13.9-13.8C136.9 99.2 139.9 98.4 142.2 98.6 133.8 88 127.5 74.4 143.8 58 148.5 53.4 154 51.2 159.7 51 160.3 49.4 163.2 43.6 171.4 40.1 171.4 40.1 176.1 42.5 178.8 56.2 183.1 58.6 187.2 61.8 190.9 65.4 194.5 69 197.7 73.2 200.1 77.6 213.8 80.2 216.3 84.9 216.3 84.9 212.7 93.1 206.9 96 205.4 96.6 205.1 102.4 203 107.8 198.3 112.5 181.9 128.9 168.3 122.5 157.7 114.1 157.9 116.9 156.7 120.9 152.7 124.9L141 136.5C139.8 137.7 141.6 141.9 141.8 141.8z" fill="currentcolor" class="octo-body"/></svg>
+</a><script type=text/javascript src=//sidecar.gitter.im/dist/sidecar.v1.js async></script><script type=text/javascript>((window.gitter={}).chat={}).options={room:"hugo-next/community"}</script><noscript><div class=noscript-warning>Theme NexT works best with JavaScript enabled</div></noscript><div class="main-inner post posts-expand"><div class=post-block><article itemscope itemtype=http://schema.org/Article class=post-content lang><link itemprop=mainEntityOfPage href=https://zanehy.github.io/blog/openresty-22-dynamic-routing/><span hidden itemprop=author itemscope itemtype=http://schema.org/Person><meta itemprop=image content="/imgs/zanehy.jpg"><meta itemprop=name content="红岩"></span><span hidden itemprop=publisher itemscope itemtype=http://schema.org/Organization><meta itemprop=name content="红岩"><meta itemprop=description content></span><span hidden itemprop=post itemscope itemtype=http://schema.org/CreativeWork><meta itemprop=name content="22 | 路由模块：动态路由"><meta itemprop=description content="实现 API 网关的路由引擎：前缀与正则匹配、从 Redis 加载路由配置、热更新不重启，以及动态选择 upstream 目标。"></span><header class=post-header><h1 class=post-title itemprop="name headline">22 | 路由模块：动态路由</h1><div class=post-meta-container><div class=post-meta-items><span class=post-meta-item><span class=post-meta-item-icon><i class="far fa-calendar"></i>
+</span><span class=post-meta-item-text title=发表于>发表于：
+</span><time title="创建时间：2026-03-10 12:00:00 +0800 CST" itemprop="dateCreated datePublished" datetime="2026-03-10 12:00:00 +0800 CST">2026-03-10
+</time></span><span class=post-meta-item><span class=post-meta-item-icon><i class="far fa-folder-open"></i>
+</span><span class=post-meta-item-text title=分类于>分类于：
+</span><span itemprop=about itemscope itemtype=http://schema.org/Thing><a href=/categories/openresty itemprop=url rel=index><span itemprop=name>OpenResty</span></a></span></span></div><div class=post-meta-items><span class=post-meta-item title=字数><span class=post-meta-item-icon><i class="far fa-file-word"></i>
+</span><span class=post-meta-item-text>字数：</span>
+<span>1565</span>
+</span><span class=post-meta-item title=阅读><span class=post-meta-item-icon><i class="far fa-clock"></i>
+</span><span class=post-meta-item-text>阅读：&ap;</span>
+<span>4分钟</span>
+</span><span class=post-meta-item title=浏览><span class=post-meta-item-icon><i class="far fa-eye"></i>
+</span><span class=post-meta-item-text>浏览：
+</span><span id=busuanzi_value_page_pv data-path=/blog/openresty-22-dynamic-routing/><i class="fa fa-sync fa-spin"></i></span></span></div></div></header><div class="post-body autonumber" itemprop=articleBody><p>架构设计好了，这篇来实现第一个核心模块：路由。路由模块要解决两个问题——怎么匹配请求，怎么找到对应的后端服务。</p><h2 id=路由匹配策略>路由匹配策略
+<a class=header-anchor href=#%e8%b7%af%e7%94%b1%e5%8c%b9%e9%85%8d%e7%ad%96%e7%95%a5></a></h2><p>路由匹配通常有三种方式，按精确度从高到低：</p><ol><li><strong>精确匹配</strong>：<code>/api/v1/user/profile</code> 只匹配这一个路径</li><li><strong>前缀匹配</strong>：<code>/api/v1/user</code> 匹配所有以此开头的路径</li><li><strong>正则匹配</strong>：<code>/api/v[0-9]+/user</code> 用正则表达式匹配</li></ol><p>匹配优先级：精确 > 前缀（长的优先） > 正则。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- core/router.lua</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> cjson <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;cjson&#34;</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> M <span style=color:#f92672>=</span> {}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 路由表（从共享内存加载）</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>get_routes</span>()
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> cache <span style=color:#f92672>=</span> ngx.shared.routes
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> data  <span style=color:#f92672>=</span> cache:get(<span style=color:#e6db74>&#34;routes&#34;</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> data <span style=color:#66d9ef>then</span> <span style=color:#66d9ef>return</span> {} <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> cjson.decode(data) <span style=color:#f92672>or</span> {}
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 路由匹配</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>function</span> <span style=color:#a6e22e>M</span>.<span style=color:#a6e22e>match</span>(uri, method)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> routes <span style=color:#f92672>=</span> get_routes()
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> matched <span style=color:#f92672>=</span> <span style=color:#66d9ef>nil</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> matched_len <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> _, route <span style=color:#66d9ef>in</span> ipairs(routes) <span style=color:#66d9ef>do</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> route.enabled <span style=color:#66d9ef>then</span> <span style=color:#66d9ef>goto</span> continue <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e>-- 方法过滤</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> route.methods <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>local</span> method_ok <span style=color:#f92672>=</span> <span style=color:#66d9ef>false</span>
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>for</span> _, m <span style=color:#66d9ef>in</span> ipairs(route.methods) <span style=color:#66d9ef>do</span>
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>if</span> m <span style=color:#f92672>==</span> method <span style=color:#66d9ef>then</span> method_ok <span style=color:#f92672>=</span> <span style=color:#66d9ef>true</span>; <span style=color:#66d9ef>break</span> <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> method_ok <span style=color:#66d9ef>then</span> <span style=color:#66d9ef>goto</span> continue <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e>-- 精确匹配</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> route.path <span style=color:#f92672>==</span> uri <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> route
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e>-- 前缀匹配（取最长匹配）</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> route.path_prefix <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>local</span> prefix <span style=color:#f92672>=</span> route.path_prefix
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>if</span> uri:sub(<span style=color:#ae81ff>1</span>, <span style=color:#f92672>#</span>prefix) <span style=color:#f92672>==</span> prefix <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>                <span style=color:#75715e>-- 确保匹配的是完整路径段（避免 /api/user 匹配 /api/username）</span>
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>local</span> next_char <span style=color:#f92672>=</span> uri:sub(<span style=color:#f92672>#</span>prefix <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span>, <span style=color:#f92672>#</span>prefix <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span>)
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>if</span> next_char <span style=color:#f92672>==</span> <span style=color:#e6db74>&#34;&#34;</span> <span style=color:#f92672>or</span> next_char <span style=color:#f92672>==</span> <span style=color:#e6db74>&#34;/&#34;</span> <span style=color:#f92672>or</span> next_char <span style=color:#f92672>==</span> <span style=color:#e6db74>&#34;?&#34;</span> <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>                    <span style=color:#66d9ef>if</span> <span style=color:#f92672>#</span>prefix <span style=color:#f92672>&gt;</span> matched_len <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>                        matched     <span style=color:#f92672>=</span> route
+</span></span><span style=display:flex><span>                        matched_len <span style=color:#f92672>=</span> <span style=color:#f92672>#</span>prefix
+</span></span><span style=display:flex><span>                    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e>-- 正则匹配</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>if</span> route.path_regex <span style=color:#f92672>and</span> <span style=color:#f92672>not</span> matched <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>local</span> m <span style=color:#f92672>=</span> ngx.re.match(uri, route.path_regex, <span style=color:#e6db74>&#34;jo&#34;</span>)
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>if</span> m <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>                matched <span style=color:#f92672>=</span> route
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        ::continue::
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> matched
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 计算转发路径（处理 strip_prefix）</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>function</span> <span style=color:#a6e22e>M</span>.<span style=color:#a6e22e>get_upstream_path</span>(route, uri)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> route.strip_prefix <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> uri
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> prefix <span style=color:#f92672>=</span> route.path_prefix <span style=color:#f92672>or</span> <span style=color:#e6db74>&#34;&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> stripped <span style=color:#f92672>=</span> uri:sub(<span style=color:#f92672>#</span>prefix <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> stripped <span style=color:#f92672>==</span> <span style=color:#e6db74>&#34;&#34;</span> <span style=color:#66d9ef>then</span> stripped <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;/&#34;</span> <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 保留 query string</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> query <span style=color:#f92672>=</span> ngx.var.query_string
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> query <span style=color:#f92672>and</span> query <span style=color:#f92672>~=</span> <span style=color:#e6db74>&#34;&#34;</span> <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        stripped <span style=color:#f92672>=</span> stripped <span style=color:#f92672>..</span> <span style=color:#e6db74>&#34;?&#34;</span> <span style=color:#f92672>..</span> query
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> stripped
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>return</span> M
+</span></span></code></pre></div><h2 id=从-redis-加载路由配置>从 Redis 加载路由配置
+<a class=header-anchor href=#%e4%bb%8e-redis-%e5%8a%a0%e8%bd%bd%e8%b7%af%e7%94%b1%e9%85%8d%e7%bd%ae></a></h2><p>路由配置存在 Redis 里，启动时加载，定期刷新：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- core/config_loader.lua</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> redis  <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;resty.redis&#34;</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> cjson  <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;cjson&#34;</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> M <span style=color:#f92672>=</span> {}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> ROUTE_KEY <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;gateway:routes&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>get_redis</span>()
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> red <span style=color:#f92672>=</span> redis:new()
+</span></span><span style=display:flex><span>    red:set_timeouts(<span style=color:#ae81ff>2000</span>, <span style=color:#ae81ff>2000</span>, <span style=color:#ae81ff>2000</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> ok, err <span style=color:#f92672>=</span> red:connect(<span style=color:#e6db74>&#34;127.0.0.1&#34;</span>, <span style=color:#ae81ff>6379</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> ok <span style=color:#66d9ef>then</span> <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>nil</span>, err <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> red
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>function</span> <span style=color:#a6e22e>M</span>.<span style=color:#a6e22e>load</span>()
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> red, err <span style=color:#f92672>=</span> get_redis()
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> red <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        ngx.log(ngx.ERR, <span style=color:#e6db74>&#34;config load failed, redis unavailable: &#34;</span>, err)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>false</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> data, err <span style=color:#f92672>=</span> red:get(ROUTE_KEY)
+</span></span><span style=display:flex><span>    red:set_keepalive(<span style=color:#ae81ff>10000</span>, <span style=color:#ae81ff>10</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> data <span style=color:#f92672>or</span> data <span style=color:#f92672>==</span> ngx.null <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        ngx.log(ngx.WARN, <span style=color:#e6db74>&#34;no route config found in redis, using empty routes&#34;</span>)
+</span></span><span style=display:flex><span>        ngx.shared.routes:set(<span style=color:#e6db74>&#34;routes&#34;</span>, <span style=color:#e6db74>&#34;[]&#34;</span>)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>true</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 验证 JSON 合法性</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> routes, err <span style=color:#f92672>=</span> cjson.decode(data)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> routes <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        ngx.log(ngx.ERR, <span style=color:#e6db74>&#34;invalid route config: &#34;</span>, err)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>false</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 写入共享内存</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> ok, err <span style=color:#f92672>=</span> ngx.shared.routes:set(<span style=color:#e6db74>&#34;routes&#34;</span>, data)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> ok <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        ngx.log(ngx.ERR, <span style=color:#e6db74>&#34;failed to cache routes: &#34;</span>, err)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>false</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    ngx.log(ngx.INFO, <span style=color:#e6db74>&#34;routes loaded: &#34;</span>, <span style=color:#f92672>#</span>routes, <span style=color:#e6db74>&#34; rules&#34;</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>true</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 热更新：重新加载配置（不重启 nginx）</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>function</span> <span style=color:#a6e22e>M</span>.<span style=color:#a6e22e>reload</span>()
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> ok <span style=color:#f92672>=</span> M.load()
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> ok <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        ngx.log(ngx.INFO, <span style=color:#e6db74>&#34;routes reloaded at &#34;</span>, ngx.now())
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>return</span> M
+</span></span></code></pre></div><p>在 Redis 里写入路由配置：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#75715e># 用 redis-cli 写入（生产环境通过管理 API 写入）</span>
+</span></span><span style=display:flex><span>redis-cli set gateway:routes <span style=color:#e6db74>&#39;[
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>  {
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    &#34;id&#34;: &#34;user-service&#34;,
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    &#34;path_prefix&#34;: &#34;/api/v1/user&#34;,
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    &#34;upstream&#34;: {&#34;targets&#34;: [{&#34;host&#34;: &#34;127.0.0.1&#34;, &#34;port&#34;: 8081}]},
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    &#34;strip_prefix&#34;: true,
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>    &#34;enabled&#34;: true
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>  }
+</span></span></span><span style=display:flex><span><span style=color:#e6db74>]&#39;</span>
+</span></span></code></pre></div><h2 id=热更新路由>热更新路由
+<a class=header-anchor href=#%e7%83%ad%e6%9b%b4%e6%96%b0%e8%b7%af%e7%94%b1></a></h2><p>路由变更后，不需要重启 nginx，只需要更新 Redis 里的配置，等下一次定时刷新（最多 30 秒），或者调用管理接口立即触发重载：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-nginx data-lang=nginx><span style=display:flex><span><span style=color:#75715e># 管理接口（只暴露在内网）
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>location</span> <span style=color:#e6db74>/admin/reload-routes</span> {
+</span></span><span style=display:flex><span>    <span style=color:#f92672>allow</span> <span style=color:#ae81ff>10</span><span style=color:#e6db74>.0.0.0/8</span>;
+</span></span><span style=display:flex><span>    <span style=color:#f92672>deny</span>  <span style=color:#e6db74>all</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#f92672>content_by_lua_block</span> {
+</span></span><span style=display:flex><span>        <span style=color:#f92672>local</span> <span style=color:#e6db74>loader</span> = <span style=color:#e6db74>require</span> <span style=color:#e6db74>&#34;core.config_loader&#34;</span>
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>local</span> <span style=color:#e6db74>ok</span> = <span style=color:#e6db74>loader.reload()</span>
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>if</span> <span style=color:#e6db74>ok</span> <span style=color:#e6db74>then</span>
+</span></span><span style=display:flex><span>            <span style=color:#e6db74>ngx.say(&#39;</span>{<span style=color:#f92672>&#34;code&#34;:0,&#34;message&#34;:&#34;routes</span> <span style=color:#e6db74>reloaded&#34;</span><span style=color:#960050;background-color:#1e0010>}</span><span style=color:#e6db74>&#39;)</span>
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>else</span>
+</span></span><span style=display:flex><span>            <span style=color:#e6db74>ngx.status</span> = <span style=color:#ae81ff>500</span>
+</span></span><span style=display:flex><span>            <span style=color:#e6db74>ngx.say(&#39;</span>{<span style=color:#f92672>&#34;code&#34;:500,&#34;message&#34;:&#34;reload</span> <span style=color:#e6db74>failed&#34;</span><span style=color:#960050;background-color:#1e0010>}</span><span style=color:#e6db74>&#39;)</span>
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>end</span>
+</span></span><span style=display:flex><span>    <span style=color:#960050;background-color:#1e0010>}</span>
+</span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>}</span>
+</span></span></code></pre></div><h2 id=upstream-动态选择>upstream 动态选择
+<a class=header-anchor href=#upstream-%e5%8a%a8%e6%80%81%e9%80%89%e6%8b%a9></a></h2><p>每条路由可以配置多个 upstream 目标，网关需要在它们之间做负载均衡。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- core/balancer.lua</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> balancer <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;ngx.balancer&#34;</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> M <span style=color:#f92672>=</span> {}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 轮询计数器（每个路由一个）</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> round_robin_counters <span style=color:#f92672>=</span> {}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 从路由配置选取目标</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>select_target</span>(route)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> targets <span style=color:#f92672>=</span> route.upstream <span style=color:#f92672>and</span> route.upstream.targets
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> targets <span style=color:#f92672>or</span> <span style=color:#f92672>#</span>targets <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span> <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>nil</span>, <span style=color:#e6db74>&#34;no upstream targets&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>#</span>targets <span style=color:#f92672>==</span> <span style=color:#ae81ff>1</span> <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> targets[<span style=color:#ae81ff>1</span>]
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> strategy <span style=color:#f92672>=</span> (route.upstream.strategy <span style=color:#f92672>or</span> <span style=color:#e6db74>&#34;round_robin&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> strategy <span style=color:#f92672>==</span> <span style=color:#e6db74>&#34;round_robin&#34;</span> <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>local</span> route_id <span style=color:#f92672>=</span> route.id <span style=color:#f92672>or</span> <span style=color:#e6db74>&#34;default&#34;</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>local</span> counter  <span style=color:#f92672>=</span> round_robin_counters[route_id] <span style=color:#f92672>or</span> <span style=color:#ae81ff>0</span>
+</span></span><span style=display:flex><span>        counter <span style=color:#f92672>=</span> (counter <span style=color:#f92672>%</span> <span style=color:#f92672>#</span>targets) <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span>
+</span></span><span style=display:flex><span>        round_robin_counters[route_id] <span style=color:#f92672>=</span> counter
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> targets[counter]
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>elseif</span> strategy <span style=color:#f92672>==</span> <span style=color:#e6db74>&#34;random&#34;</span> <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> targets[math.random(<span style=color:#f92672>#</span>targets)]
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>elseif</span> strategy <span style=color:#f92672>==</span> <span style=color:#e6db74>&#34;ip_hash&#34;</span> <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e>-- 按客户端 IP 哈希，同一 IP 始终路由到同一后端</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>local</span> ip  <span style=color:#f92672>=</span> ngx.var.remote_addr <span style=color:#f92672>or</span> <span style=color:#e6db74>&#34;0.0.0.0&#34;</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>local</span> idx <span style=color:#f92672>=</span> (tonumber(ngx.crc32_short(ip)) <span style=color:#f92672>%</span> <span style=color:#f92672>#</span>targets) <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> targets[idx]
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> targets[<span style=color:#ae81ff>1</span>]
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- balancer_by_lua 阶段调用</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>function</span> <span style=color:#a6e22e>M</span>.<span style=color:#a6e22e>balance</span>()
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> route <span style=color:#f92672>=</span> ngx.ctx.route
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> route <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> balancer.set_current_peer(<span style=color:#e6db74>&#34;127.0.0.1&#34;</span>, <span style=color:#ae81ff>80</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> target, err <span style=color:#f92672>=</span> select_target(route)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> target <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        ngx.log(ngx.ERR, <span style=color:#e6db74>&#34;no target: &#34;</span>, err)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> ngx.exit(<span style=color:#ae81ff>502</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 设置超时</span>
+</span></span><span style=display:flex><span>    balancer.set_timeouts(
+</span></span><span style=display:flex><span>        (route.upstream.connect_timeout <span style=color:#f92672>or</span> <span style=color:#ae81ff>2000</span>) <span style=color:#f92672>/</span> <span style=color:#ae81ff>1000</span>,
+</span></span><span style=display:flex><span>        (route.upstream.read_timeout    <span style=color:#f92672>or</span> <span style=color:#ae81ff>60000</span>) <span style=color:#f92672>/</span> <span style=color:#ae81ff>1000</span>,
+</span></span><span style=display:flex><span>        (route.upstream.send_timeout    <span style=color:#f92672>or</span> <span style=color:#ae81ff>60000</span>) <span style=color:#f92672>/</span> <span style=color:#ae81ff>1000</span>
+</span></span><span style=display:flex><span>    )
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> ok, err <span style=color:#f92672>=</span> balancer.set_current_peer(target.host, target.port)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> ok <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        ngx.log(ngx.ERR, <span style=color:#e6db74>&#34;set_current_peer failed: &#34;</span>, err)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> ngx.exit(<span style=color:#ae81ff>502</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>return</span> M
+</span></span></code></pre></div><h2 id=把路由结果传递给-balancer>把路由结果传递给 balancer
+<a class=header-anchor href=#%e6%8a%8a%e8%b7%af%e7%94%b1%e7%bb%93%e6%9e%9c%e4%bc%a0%e9%80%92%e7%bb%99-balancer></a></h2><p><code>balancer_by_lua</code> 在 <code>content_by_lua</code> 之后执行，需要通过 <code>ngx.ctx</code> 传递路由信息：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- content_by_lua_block（路由分发）</span>
+</span></span><span style=display:flex><span>content_by_lua_block {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> router   <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;core.router&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> response <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;lib.response&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> uri    <span style=color:#f92672>=</span> ngx.var.uri
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> method <span style=color:#f92672>=</span> ngx.req.get_method()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> route, err <span style=color:#f92672>=</span> router.match(uri, method)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> route <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> response.error(<span style=color:#ae81ff>404</span>, <span style=color:#e6db74>&#34;no route found for &#34;</span> <span style=color:#f92672>..</span> method <span style=color:#f92672>..</span> <span style=color:#e6db74>&#34; &#34;</span> <span style=color:#f92672>..</span> uri, <span style=color:#ae81ff>404</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 存入 ctx，供 balancer_by_lua 使用</span>
+</span></span><span style=display:flex><span>    ngx.ctx.route <span style=color:#f92672>=</span> route
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 计算转发路径</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> upstream_path <span style=color:#f92672>=</span> router.get_upstream_path(route, uri)
+</span></span><span style=display:flex><span>    ngx.req.set_uri(upstream_path)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 设置 upstream Host</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> target <span style=color:#f92672>=</span> route.upstream.targets[<span style=color:#ae81ff>1</span>]
+</span></span><span style=display:flex><span>    ngx.var.upstream_host <span style=color:#f92672>=</span> target.host <span style=color:#f92672>..</span> <span style=color:#e6db74>&#34;:&#34;</span> <span style=color:#f92672>..</span> target.port
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 转发到 @upstream location</span>
+</span></span><span style=display:flex><span>    ngx.exec(<span style=color:#e6db74>&#34;@upstream&#34;</span>)
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h2 id=路由调试接口>路由调试接口
+<a class=header-anchor href=#%e8%b7%af%e7%94%b1%e8%b0%83%e8%af%95%e6%8e%a5%e5%8f%a3></a></h2><p>开发阶段方便测试路由是否匹配正确：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-nginx data-lang=nginx><span style=display:flex><span><span style=color:#66d9ef>location</span> <span style=color:#e6db74>/admin/route-test</span> {
+</span></span><span style=display:flex><span>    <span style=color:#f92672>allow</span> <span style=color:#ae81ff>127</span><span style=color:#e6db74>.0.0.1</span>;
+</span></span><span style=display:flex><span>    <span style=color:#f92672>deny</span>  <span style=color:#e6db74>all</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#f92672>content_by_lua_block</span> {
+</span></span><span style=display:flex><span>        <span style=color:#f92672>local</span> <span style=color:#e6db74>router</span> = <span style=color:#e6db74>require</span> <span style=color:#e6db74>&#34;core.router&#34;</span>
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>local</span> <span style=color:#e6db74>cjson</span>  = <span style=color:#e6db74>require</span> <span style=color:#e6db74>&#34;cjson&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>local</span> <span style=color:#e6db74>uri</span>    = <span style=color:#e6db74>ngx.var.arg_uri</span> <span style=color:#e6db74>or</span> <span style=color:#e6db74>&#34;/&#34;</span>
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>local</span> <span style=color:#e6db74>method</span> = <span style=color:#e6db74>ngx.var.arg_method</span> <span style=color:#e6db74>or</span> <span style=color:#e6db74>&#34;GET&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>local</span> <span style=color:#e6db74>route</span> = <span style=color:#e6db74>router.match(uri,</span> <span style=color:#e6db74>method)</span>
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>if</span> <span style=color:#e6db74>route</span> <span style=color:#e6db74>then</span>
+</span></span><span style=display:flex><span>            <span style=color:#e6db74>ngx.say(cjson.encode(</span>{<span style=color:#f92672>matched</span> = <span style=color:#e6db74>true,</span> <span style=color:#e6db74>route_id</span> = <span style=color:#e6db74>route.id,</span> <span style=color:#e6db74>upstream</span> = <span style=color:#e6db74>route.upstream</span><span style=color:#960050;background-color:#1e0010>}</span><span style=color:#e6db74>))</span>
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>else</span>
+</span></span><span style=display:flex><span>            <span style=color:#e6db74>ngx.say(cjson.encode(</span>{<span style=color:#f92672>matched</span> = <span style=color:#e6db74>false</span><span style=color:#960050;background-color:#1e0010>}</span><span style=color:#e6db74>))</span>
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>end</span>
+</span></span><span style=display:flex><span>    <span style=color:#960050;background-color:#1e0010>}</span>
+</span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>}</span>
+</span></span></code></pre></div><p>测试：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-bash data-lang=bash><span style=display:flex><span>curl <span style=color:#e6db74>&#34;http://gateway/admin/route-test?uri=/api/v1/user/123&amp;method=GET&#34;</span>
+</span></span><span style=display:flex><span><span style=color:#75715e># {&#34;matched&#34;:true,&#34;route_id&#34;:&#34;user-service&#34;,&#34;upstream&#34;:{&#34;targets&#34;:[...]}}</span>
+</span></span></code></pre></div><h2 id=小结>小结
+<a class=header-anchor href=#%e5%b0%8f%e7%bb%93></a></h2><p>路由模块的几个要点：</p><ul><li>匹配优先级：精确 > 前缀（最长优先） > 正则</li><li>路由配置存 Redis，通过定时器热加载，管理接口可触发立即更新</li><li><code>ngx.ctx.route</code> 是路由信息在各阶段之间传递的载体</li><li>负载均衡策略在 <code>balancer_by_lua</code> 阶段执行，支持轮询、随机、IP Hash</li></ul><p>下一篇实现鉴权模块——JWT 认证，包括 Token 验证、过期处理和白名单路由。</p></div><footer class=post-footer><div class=post-tags><a href=/tags/openresty>OpenResty
+</a><a href=/tags/%e7%bd%91%e5%85%b3>网关
+</a><a href=/tags/%e8%b7%af%e7%94%b1>路由</a></div><div class=addthis_inline_share_toolbox style=text-align:center></div><hr><div class=post-copyright><img src=/imgs/cc/cc.svg width=75 height=75 align=right alt=共享知识><ul><li class=post-copyright-title><strong>文章标题：</strong>
+22 | 路由模块：动态路由</li><li class=post-copyright-author><strong>本文作者： </strong>红岩</li><li class=post-copyright-link><strong>本文链接：</strong>
+<a id=post-cr-link href=https://zanehy.github.io/blog/openresty-22-dynamic-routing/ title="22 | 路由模块：动态路由">https://zanehy.github.io/blog/openresty-22-dynamic-routing/</a></li><li class=post-copyright-license><strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <i class="fab fa-fw fa-creative-commons"></i><a target=_blank href=https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh>BY-NC-SA</a> 许可协议。转载请注明出处！</li></ul></div><div class=post-nav><div class="post-nav-next post-nav-item"><a href=/blog/openresty-07-lua-modules/ rel=next title="07 | Lua 模块系统与代码组织"><i class="fa fa-chevron-left"></i> 07 | Lua 模块系统与代码组织</a></div><div class="post-nav-prev post-nav-item"><a href=/blog/openresty-06-lua-table/ rel=prev title="06 | Lua Table 深度解析">06 | Lua Table 深度解析
+<i class="fa fa-chevron-right"></i></a></div></div></footer></article></div></div></main><footer class=footer><div class=footer-inner><div class=copyright>&copy;
+<span itemprop=copyrightYear>2024 - 2026
+</span><span class=with-love><i class="fa fa-heart"></i>
+</span><span class=author itemprop=copyrightHolder>红岩</span></div><div class=powered-by>由 <a href=https://gohugo.io title=0.123.7 target=_blank>Hugo</a> & <a href=https://github.com/hugo-next/hugo-theme-next title=4.5.3 target=_blank>Hugo NexT.Gemini</a> 强力驱动</div></div></footer><script type=text/javascript src=https://cdn.staticfile.org/animejs/3.2.1/anime.min.js defer></script><script type=text/javascript src=https://cdn.staticfile.org/viewerjs/1.11.0/viewer.min.js defer></script><script class=next-config data-name=main type=application/json>{"bookmark":{"color":"#888","enable":true,"save":"manual"},"copybtn":true,"darkmode":true,"giscus":{"cfg":{"category":"Comments","categoryid":null,"emit":false,"inputposition":"top","mapping":"title","reactions":false,"repo":"username/repo-name","repoid":null,"theme":"preferred_color_scheme"},"js":"https://giscus.app/client.js"},"hostname":"https://zanehy.github.io/","i18n":{"ds_day":" 天前","ds_days":" 天 ","ds_hour":" 小时前","ds_hours":" 小时 ","ds_just":"刚刚","ds_min":" 分钟前","ds_mins":" 分钟","ds_month":" 个月前","ds_years":" 年 ","empty":"没有找到任何搜索结果：${query}","hits":"找到 ${hits} 个搜索结果","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","placeholder":"搜索..."},"lang":"zh-CN","lazyload":false,"localSearch":{"enable":true,"limit":1e3,"path":"/searchindexes.xml","preload":true,"topnperarticle":-1,"trigger":"auto","unescape":true},"motion":{"async":true,"enable":true,"transition":{"collheader":"fadeInLeft","postblock":"fadeIn","postbody":"fadeInDown","postheader":"fadeInDown","sidebar":"fadeInUp"}},"postmeta":{"comments":{"enable":true,"plugin":"waline"},"views":{"enable":true,"plugin":"busuanzi"}},"root":"/","scheme":"Gemini","sidebar":{"display":"post","offset":12,"padding":18,"position":"left","width":256},"vendor":{"plugins":"qiniu","router":"https://cdn.staticfile.org"},"version":"4.5.3","waline":{"cfg":{"emoji":false,"imguploader":false,"placeholder":"请文明发言哟 ヾ(≧▽≦*)o","reaction":true,"reactiontext":["点赞","踩一下","得意","不屑","尴尬","睡觉"],"reactiontitle":"你认为这篇文章怎么样？","requiredmeta":["nick","mail"],"serverurl":null,"sofa":"快来发表你的意见吧 (≧∀≦)ゞ","wordlimit":200},"css":{"alias":"waline","file":"dist/waline.css","name":"@waline/client","version":"2.13.0"},"js":{"alias":"waline","file":"dist/waline.js","name":"@waline/client","version":"2.13.0"}}}</script><script type=text/javascript src=/js/main.min.0b6f435ab2b781f04f78d578f42b492c126726d94b54a88d0af9aaf3c50c4457.js defer></script></body></html>
