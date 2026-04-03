@@ -1,0 +1,298 @@
+<!doctype html><html lang=zh-CN data-theme=dark><head><meta charset=UTF-8><meta name=viewport content="width=device-width"><meta name=theme-color content="#222" media="(prefers-color-scheme: dark)"><meta name=generator content="Hugo 0.123.7"><link rel="shortcut icon" type=image/x-icon href=/imgs/icons/zanehy.ico><link rel=icon type=image/x-icon href=/imgs/icons/zanehy.ico><link rel=icon type=image/png sizes=16x16 href=/imgs/icons/zanehy_16x16.jpg><link rel=icon type=image/png sizes=32x32 href=/imgs/icons/zanehy_32_32.jpg><link rel=apple-touch-icon sizes=180x180 href=/imgs/zanehy.jpg><meta itemprop=name content="29 | 测试与调试"><meta itemprop=description content="掌握 OpenResty 项目的测试方法：busted 单元测试框架、Test::Nginx 集成测试，以及本地调试技巧和常见报错的排查手册。"><meta itemprop=datePublished zgotmplz><meta itemprop=dateModified zgotmplz><meta itemprop=image content="https://zanehy.github.io/imgs/zanehy.jpg"><meta itemprop=keywords content="OpenResty,测试,调试"><meta property="og:type" content="article"><meta property="og:title" content="29 | 测试与调试"><meta property="og:description" content="掌握 OpenResty 项目的测试方法：busted 单元测试框架、Test::Nginx 集成测试，以及本地调试技巧和常见报错的排查手册。"><meta property="og:image" content="/imgs/zanehy.jpg"><meta property="og:image:width" content="312"><meta property="og:image:height" content="312"><meta property="og:image:type" content="image/jpeg/png/svg/jpg"><meta property="og:url" content="https://zanehy.github.io/blog/openresty-29-testing/"><meta property="og:site_name" content="红岩 | 个人博客"><meta property="og:locale" content="zh-CN"><meta property="article:author" content="红岩"><meta property="article:published_time" content="2026-04-03 16:47:00 +0800 CST"><meta property="article:modified_time" content="2026-04-03 16:47:00 +0800 CST"><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/font-awesome/6.1.2/css/all.min.css><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/animate.css/3.1.1/animate.min.css><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/viewerjs/1.11.0/viewer.min.css><link rel=stylesheet href=/css/main.min.33a74da2976ebbac6b4f1852845dfaad330b3fbd6c4e4b31ec4820969c3d5038.css><script type=text/javascript>(function(){localDB={set:function(e,t,n){if(n===0)return;const s=new Date,o=n*864e5,i={value:t,expiry:s.getTime()+o};localStorage.setItem(e,JSON.stringify(i))},get:function(e){const t=localStorage.getItem(e);if(!t)return void 0;const n=JSON.parse(t),s=new Date;return s.getTime()>n.expiry?(localStorage.removeItem(e),void 0):n.value}},theme={active:function(){const e=localDB.get("theme");if(e==null)return;theme.toggle(e),window.matchMedia("(prefers-color-scheme: dark)").addListener(function(e){theme.toggle(e.matches?"dark":"light")})},toggle:function(e){document.documentElement.setAttribute("data-theme",e),localDB.set("theme",e,2);const t=document.querySelector("iframe.giscus-frame");if(t){const n={setConfig:{theme:e}};t.contentWindow.postMessage({giscus:n},"https://giscus.app")}}},theme.active()})(window)</script><script class=next-config data-name=page type=application/json>{"comments":false,"isHome":false,"isPage":true,"path":"openresty-29-testing","permalink":"https://zanehy.github.io/blog/openresty-29-testing/","title":"29 | 测试与调试","waline":{"js":[{"alias":"waline","alias_name":"@waline/client","file":"dist/pageview.js","name":"pageview","version":"2.13.0"},{"alias":"waline","alias_name":"@waline/client","file":"dist/comment.js","name":"comment","version":"2.13.0"}]}}</script><script type=text/javascript>document.addEventListener("DOMContentLoaded",()=>{var e=document.createElement("script");e.charset="UTF-8",e.src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js",e.async=!1,e.defer=!0,document.head.appendChild(e),e.onload=function(){NexT.utils.fmtBusuanzi()}})</script><title>29 | 测试与调试 - 红岩 | 个人博客</title><noscript><link rel=stylesheet href=/css/noscript.css></noscript></head><body itemscope itemtype=http://schema.org/WebPage class=use-motion><div class=headband></div><main class=main><header class=header itemscope itemtype=http://schema.org/WPHeader><div class=header-inner><div class=site-brand-container><div class=site-nav-toggle><div class=toggle aria-label role=button><span class=toggle-line></span>
+<span class=toggle-line></span>
+<span class=toggle-line></span></div></div><div class=site-meta><a href=/ class=brand rel=start><i class=logo-line></i><h1 class=site-title>红岩 | 个人博客</h1><i class=logo-line></i></a><p class=site-subtitle itemprop=description>记录生活，记录成长</p></div><div class=site-nav-right><div class="toggle popup-trigger"><i class="fa fa-search fa-fw fa-lg"></i></div></div></div><nav class=site-nav><ul class="main-menu menu"><li class="menu-item menu-item-home"><a href=/ class=hvr-icon-pulse rel=section><i class="fa fa-home hvr-icon"></i>首页</a></li><li class="menu-item menu-item-about"><a href=/about.html class=hvr-icon-pulse rel=section><i class="fa fa-user hvr-icon"></i>关于</a></li><li class="menu-item menu-item-my_blog"><a href=/blog/ class=hvr-icon-pulse rel=section><i class="fa fa-blog hvr-icon"></i>技术博客</a></li><li class="menu-item menu-item-my_life"><a href=/life/ class=hvr-icon-pulse rel=section><i class="fa fa-pizza-slice hvr-icon"></i>生活点滴</a></li><li class="menu-item menu-item-archives"><a href=/archives/ class=hvr-icon-pulse rel=section><i class="fa fa-archive hvr-icon"></i>归档日志
+<span class=badge>30</span></a></li><li class="menu-item menu-item-search"><a role=button class="popup-trigger hvr-icon-pulse"><i class="fa fa-search fa-fw hvr-icon"></i>搜索</a></li></ul></nav><div class=search-pop-overlay><div class="popup search-popup"><div class=search-header><span class=search-icon><i class="fa fa-search"></i></span><div class=search-input-container><input autocomplete=off autocapitalize=off maxlength=80 placeholder=搜索... spellcheck=false type=search class=search-input></div><span class=popup-btn-close role=button><i class="fa fa-times-circle"></i></span></div><div class="search-result-container no-result"><div class=search-result-icon><i class="fa fa-spinner fa-pulse fa-5x"></i></div></div></div></div></div><div class="toggle sidebar-toggle" role=button><span class=toggle-line></span>
+<span class=toggle-line></span>
+<span class=toggle-line></span></div><aside class=sidebar><div class="sidebar-inner sidebar-nav-active sidebar-toc-active"><ul class=sidebar-nav><li class=sidebar-nav-toc>文章目录</li><li class=sidebar-nav-overview>站点概览</li></ul><div class=sidebar-panel-container><div class="post-toc-wrap sidebar-panel"><div class="post-toc animated"><nav id=TableOfContents><ul><li><a href=#busted-单元测试>busted 单元测试</a><ul><li><a href=#安装>安装</a></li><li><a href=#基本用法>基本用法</a></li><li><a href=#mock-ngx-环境>Mock ngx 环境</a></li></ul></li><li><a href=#testnginx-集成测试>Test::Nginx 集成测试</a><ul><li><a href=#安装-1>安装</a></li><li><a href=#测试文件格式>测试文件格式</a></li><li><a href=#运行测试>运行测试</a></li></ul></li><li><a href=#本地调试技巧>本地调试技巧</a><ul><li><a href=#1-合理使用-ngxlog>1. 合理使用 ngx.log</a></li><li><a href=#2-实时查看日志>2. 实时查看日志</a></li><li><a href=#3-使用-ngxsay-临时-dump>3. 使用 ngx.say 临时 dump</a></li></ul></li><li><a href=#常见报错排查手册>常见报错排查手册</a></li><li><a href=#小结>小结</a></li></ul></nav></div></div><div class="site-overview-wrap sidebar-panel"><div class="site-author site-overview-item animated" itemprop=author itemscope itemtype=http://schema.org/Person><img class=site-author-image itemprop=image alt=红岩 src=/imgs/img-lazy-loading.gif data-src=/imgs/zanehy.jpg><p class=site-author-name itemprop=name>红岩</p><div class=site-description itemprop=description></div></div><div class="site-state-wrap site-overview-item animated"><nav class=site-state><div class="site-state-item site-state-posts"><a href=/archives/><span class=site-state-item-count>30</span>
+<span class=site-state-item-name>日志</span></a></div><div class="site-state-item site-state-categories"><a href=/categories/><span class=site-state-item-count>2</span>
+<span class=site-state-item-name>分类</span></a></div><div class="site-state-item site-state-tags"><a href=/tags/><span class=site-state-item-count>40</span>
+<span class=site-state-item-name>标签</span></a></div></nav></div><div class="links-of-social site-overview-item animated"></div></div></div></div><div id=siteinfo-card-widget class=sidebar-card-widget><div class=item-headline><i class="fas fa-chart-line"></i>
+<span>网站资讯</span></div><div class=siteinfo><div class=siteinfo-item><div class=item-name><i class="fa-solid fa-calendar-check"></i>已运行：</div><div class=item-count id=runTimes data-publishdate=2026-03-04T17:00:00+08:00></div></div><div class=siteinfo-item><div class=item-name><i class="fas fa fa-user"></i>总访客数：</div><div class=item-count id=busuanzi_value_site_uv><i class="fa fa-sync fa-spin"></i></div></div><div class=siteinfo-item><div class=item-name><i class="fas fa fa-eye"></i>页面浏览：</div><div class=item-count id=busuanzi_value_site_pv><i class="fa fa-sync fa-spin"></i></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-font"></i>总字数：</div><div class=item-count id=wordsCount data-count=58886></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-mug-hot"></i>阅读约：</div><div class=item-count id=readTimes data-times=136></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-clock-rotate-left"></i>最后更新于：</div><div class=item-count id=last-push-date data-lastpushdate=2026-04-03T16:47:00+08:00></div></div></div></div></aside><div class=sidebar-dimmer></div></header><div class=tool-buttons><div id=toggle-theme class=button title=深浅模式切换><i class="fas fa-adjust"></i></div><div class=back-to-top role=button title=返回顶部><i class="fa fa-arrow-up"></i>
+<span>0%</span></div></div><div class=reading-progress-bar></div><a role=button class="book-mark-link book-mark-link-fixed"></a><a href=https://github.com/zanehy rel="noopener external nofollow noreferrer" target=_blank title="Follow me on GitHub" class="exturl github-corner"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0 0 115 115h15l12 27L250 250V0z"/><path d="M128.3 109C113.8 99.7 119 89.6 119 89.6 122 82.7 120.5 78.6 120.5 78.6 119.2 72 123.4 76.3 123.4 76.3 127.3 80.9 125.5 87.3 125.5 87.3 122.9 97.6 130.6 101.9 134.4 103.2" fill="currentcolor" style="transform-origin:130px 106px" class="octo-arm"/><path d="M115 115C114.9 115.1 118.7 116.5 119.8 115.4l13.9-13.8C136.9 99.2 139.9 98.4 142.2 98.6 133.8 88 127.5 74.4 143.8 58 148.5 53.4 154 51.2 159.7 51 160.3 49.4 163.2 43.6 171.4 40.1 171.4 40.1 176.1 42.5 178.8 56.2 183.1 58.6 187.2 61.8 190.9 65.4 194.5 69 197.7 73.2 200.1 77.6 213.8 80.2 216.3 84.9 216.3 84.9 212.7 93.1 206.9 96 205.4 96.6 205.1 102.4 203 107.8 198.3 112.5 181.9 128.9 168.3 122.5 157.7 114.1 157.9 116.9 156.7 120.9 152.7 124.9L141 136.5C139.8 137.7 141.6 141.9 141.8 141.8z" fill="currentcolor" class="octo-body"/></svg>
+</a><script type=text/javascript src=//sidecar.gitter.im/dist/sidecar.v1.js async></script><script type=text/javascript>((window.gitter={}).chat={}).options={room:"hugo-next/community"}</script><noscript><div class=noscript-warning>Theme NexT works best with JavaScript enabled</div></noscript><div class="main-inner post posts-expand"><div class=post-block><article itemscope itemtype=http://schema.org/Article class=post-content lang><link itemprop=mainEntityOfPage href=https://zanehy.github.io/blog/openresty-29-testing/><span hidden itemprop=author itemscope itemtype=http://schema.org/Person><meta itemprop=image content="/imgs/zanehy.jpg"><meta itemprop=name content="红岩"></span><span hidden itemprop=publisher itemscope itemtype=http://schema.org/Organization><meta itemprop=name content="红岩"><meta itemprop=description content></span><span hidden itemprop=post itemscope itemtype=http://schema.org/CreativeWork><meta itemprop=name content="29 | 测试与调试"><meta itemprop=description content="掌握 OpenResty 项目的测试方法：busted 单元测试框架、Test::Nginx 集成测试，以及本地调试技巧和常见报错的排查手册。"></span><header class=post-header><h1 class=post-title itemprop="name headline">29 | 测试与调试</h1><div class=post-meta-container><div class=post-meta-items><span class=post-meta-item><span class=post-meta-item-icon><i class="far fa-calendar"></i>
+</span><span class=post-meta-item-text title=发表于>发表于：
+</span><time title="创建时间：2026-04-03 16:47:00 +0800 CST" itemprop="dateCreated datePublished" datetime="2026-04-03 16:47:00 +0800 CST">2026-04-03
+</time></span><span class=post-meta-item><span class=post-meta-item-icon><i class="far fa-folder-open"></i>
+</span><span class=post-meta-item-text title=分类于>分类于：
+</span><span itemprop=about itemscope itemtype=http://schema.org/Thing><a href=/categories/openresty itemprop=url rel=index><span itemprop=name>OpenResty</span></a></span></span></div><div class=post-meta-items><span class=post-meta-item title=字数><span class=post-meta-item-icon><i class="far fa-file-word"></i>
+</span><span class=post-meta-item-text>字数：</span>
+<span>1655</span>
+</span><span class=post-meta-item title=阅读><span class=post-meta-item-icon><i class="far fa-clock"></i>
+</span><span class=post-meta-item-text>阅读：&ap;</span>
+<span>4分钟</span>
+</span><span class=post-meta-item title=浏览><span class=post-meta-item-icon><i class="far fa-eye"></i>
+</span><span class=post-meta-item-text>浏览：
+</span><span id=busuanzi_value_page_pv data-path=/blog/openresty-29-testing/><i class="fa fa-sync fa-spin"></i></span></span></div></div></header><div class="post-body autonumber" itemprop=articleBody><p>写完代码，怎么验证它是对的？线上出了问题，怎么快速定位？这篇来讲 OpenResty 项目的测试和调试方法。</p><h2 id=busted-单元测试>busted 单元测试
+<a class=header-anchor href=#busted-%e5%8d%95%e5%85%83%e6%b5%8b%e8%af%95></a></h2><p>busted 是 Lua 生态里最成熟的测试框架，语法类似 RSpec/Jest。</p><h3 id=安装>安装
+<a class=header-anchor href=#%e5%ae%89%e8%a3%85></a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-bash data-lang=bash><span style=display:flex><span>luarocks install busted
+</span></span></code></pre></div><h3 id=基本用法>基本用法
+<a class=header-anchor href=#%e5%9f%ba%e6%9c%ac%e7%94%a8%e6%b3%95></a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- spec/utils_spec.lua</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> describe <span style=color:#f92672>=</span> describe
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> it       <span style=color:#f92672>=</span> it
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> assert   <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;luassert&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> utils <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;lib.utils&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>describe(<span style=color:#e6db74>&#34;utils.slugify&#34;</span>, <span style=color:#66d9ef>function</span>()
+</span></span><span style=display:flex><span>    it(<span style=color:#e6db74>&#34;converts spaces to hyphens&#34;</span>, <span style=color:#66d9ef>function</span>()
+</span></span><span style=display:flex><span>        assert.equals(<span style=color:#e6db74>&#34;hello-world&#34;</span>, utils.slugify(<span style=color:#e6db74>&#34;hello world&#34;</span>))
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    it(<span style=color:#e6db74>&#34;lowercases the string&#34;</span>, <span style=color:#66d9ef>function</span>()
+</span></span><span style=display:flex><span>        assert.equals(<span style=color:#e6db74>&#34;hello&#34;</span>, utils.slugify(<span style=color:#e6db74>&#34;HELLO&#34;</span>))
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    it(<span style=color:#e6db74>&#34;removes special characters&#34;</span>, <span style=color:#66d9ef>function</span>()
+</span></span><span style=display:flex><span>        assert.equals(<span style=color:#e6db74>&#34;hello-world&#34;</span>, utils.slugify(<span style=color:#e6db74>&#34;hello, world!&#34;</span>))
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>describe(<span style=color:#e6db74>&#34;utils.parse_token&#34;</span>, <span style=color:#66d9ef>function</span>()
+</span></span><span style=display:flex><span>    it(<span style=color:#e6db74>&#34;returns nil for empty string&#34;</span>, <span style=color:#66d9ef>function</span>()
+</span></span><span style=display:flex><span>        assert.is_nil(utils.parse_token(<span style=color:#e6db74>&#34;&#34;</span>))
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    it(<span style=color:#e6db74>&#34;extracts bearer token&#34;</span>, <span style=color:#66d9ef>function</span>()
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>local</span> token <span style=color:#f92672>=</span> utils.parse_token(<span style=color:#e6db74>&#34;Bearer abc123&#34;</span>)
+</span></span><span style=display:flex><span>        assert.equals(<span style=color:#e6db74>&#34;abc123&#34;</span>, token)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>)
+</span></span></code></pre></div><p>运行测试：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-bash data-lang=bash><span style=display:flex><span>busted spec/          <span style=color:#75715e># 运行所有测试</span>
+</span></span><span style=display:flex><span>busted spec/utils_spec.lua  <span style=color:#75715e># 运行单个文件</span>
+</span></span><span style=display:flex><span>busted --verbose      <span style=color:#75715e># 详细输出</span>
+</span></span></code></pre></div><h3 id=mock-ngx-环境>Mock ngx 环境
+<a class=header-anchor href=#mock-ngx-%e7%8e%af%e5%a2%83></a></h3><p>插件代码依赖 <code>ngx</code> 全局对象，单元测试时需要 mock：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- spec/helpers/ngx_mock.lua</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> shared_store <span style=color:#f92672>=</span> {}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>_G.ngx <span style=color:#f92672>=</span> {
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 共享内存 mock</span>
+</span></span><span style=display:flex><span>    shared <span style=color:#f92672>=</span> setmetatable({}, {
+</span></span><span style=display:flex><span>        __index <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>(t, name)
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> shared_store[name] <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>                shared_store[name] <span style=color:#f92672>=</span> {}
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>local</span> store <span style=color:#f92672>=</span> shared_store[name]
+</span></span><span style=display:flex><span>                setmetatable(store, {
+</span></span><span style=display:flex><span>                    __index <span style=color:#f92672>=</span> {
+</span></span><span style=display:flex><span>                        get    <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>(_, k) <span style=color:#66d9ef>return</span> store[k] <span style=color:#66d9ef>end</span>,
+</span></span><span style=display:flex><span>                        set    <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>(_, k, v) store[k] <span style=color:#f92672>=</span> v; <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>true</span> <span style=color:#66d9ef>end</span>,
+</span></span><span style=display:flex><span>                        incr   <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>(_, k, d, init)
+</span></span><span style=display:flex><span>                            store[k] <span style=color:#f92672>=</span> (store[k] <span style=color:#f92672>or</span> init <span style=color:#f92672>or</span> <span style=color:#ae81ff>0</span>) <span style=color:#f92672>+</span> d
+</span></span><span style=display:flex><span>                            <span style=color:#66d9ef>return</span> store[k]
+</span></span><span style=display:flex><span>                        <span style=color:#66d9ef>end</span>,
+</span></span><span style=display:flex><span>                        delete <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>(_, k) store[k] <span style=color:#f92672>=</span> <span style=color:#66d9ef>nil</span> <span style=color:#66d9ef>end</span>,
+</span></span><span style=display:flex><span>                        add    <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>(_, k, v)
+</span></span><span style=display:flex><span>                            <span style=color:#66d9ef>if</span> store[k] <span style=color:#66d9ef>then</span> <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>false</span> <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>                            store[k] <span style=color:#f92672>=</span> v; <span style=color:#66d9ef>return</span> <span style=color:#66d9ef>true</span>
+</span></span><span style=display:flex><span>                        <span style=color:#66d9ef>end</span>,
+</span></span><span style=display:flex><span>                    }
+</span></span><span style=display:flex><span>                })
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> shared_store[name]
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>    }),
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 请求相关</span>
+</span></span><span style=display:flex><span>    var            <span style=color:#f92672>=</span> { remote_addr <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;127.0.0.1&#34;</span>, uri <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;/test&#34;</span> },
+</span></span><span style=display:flex><span>    req            <span style=color:#f92672>=</span> {
+</span></span><span style=display:flex><span>        get_headers  <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>() <span style=color:#66d9ef>return</span> {} <span style=color:#66d9ef>end</span>,
+</span></span><span style=display:flex><span>        get_uri_args <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>() <span style=color:#66d9ef>return</span> {} <span style=color:#66d9ef>end</span>,
+</span></span><span style=display:flex><span>        set_header   <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>() <span style=color:#66d9ef>end</span>,
+</span></span><span style=display:flex><span>        clear_header <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>() <span style=color:#66d9ef>end</span>,
+</span></span><span style=display:flex><span>    },
+</span></span><span style=display:flex><span>    header         <span style=color:#f92672>=</span> {},
+</span></span><span style=display:flex><span>    status         <span style=color:#f92672>=</span> <span style=color:#ae81ff>200</span>,
+</span></span><span style=display:flex><span>    ctx            <span style=color:#f92672>=</span> {},
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 常量</span>
+</span></span><span style=display:flex><span>    OK     <span style=color:#f92672>=</span> <span style=color:#ae81ff>200</span>,
+</span></span><span style=display:flex><span>    ERR    <span style=color:#f92672>=</span> <span style=color:#ae81ff>500</span>,
+</span></span><span style=display:flex><span>    WARN   <span style=color:#f92672>=</span> <span style=color:#ae81ff>301</span>,
+</span></span><span style=display:flex><span>    INFO   <span style=color:#f92672>=</span> <span style=color:#ae81ff>302</span>,
+</span></span><span style=display:flex><span>    DEBUG  <span style=color:#f92672>=</span> <span style=color:#ae81ff>303</span>,
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>-- 函数</span>
+</span></span><span style=display:flex><span>    log    <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>() <span style=color:#66d9ef>end</span>,
+</span></span><span style=display:flex><span>    time   <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>() <span style=color:#66d9ef>return</span> os.time() <span style=color:#66d9ef>end</span>,
+</span></span><span style=display:flex><span>    now    <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>() <span style=color:#66d9ef>return</span> os.time() <span style=color:#66d9ef>end</span>,
+</span></span><span style=display:flex><span>    sleep  <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>() <span style=color:#66d9ef>end</span>,
+</span></span><span style=display:flex><span>    exit   <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>(code) error(<span style=color:#e6db74>&#34;ngx.exit:&#34;</span> <span style=color:#f92672>..</span> (code <span style=color:#f92672>or</span> <span style=color:#ae81ff>0</span>)) <span style=color:#66d9ef>end</span>,
+</span></span><span style=display:flex><span>    say    <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>(s) io.write(tostring(s) <span style=color:#f92672>..</span> <span style=color:#e6db74>&#34;</span><span style=color:#ae81ff>\n</span><span style=color:#e6db74>&#34;</span>) <span style=color:#66d9ef>end</span>,
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>测试里引入这个 mock：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- spec/plugins/jwt_auth_spec.lua</span>
+</span></span><span style=display:flex><span>require <span style=color:#e6db74>&#34;spec.helpers.ngx_mock&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> jwt_auth <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;plugins.jwt_auth&#34;</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> jwt      <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;resty.jwt&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>describe(<span style=color:#e6db74>&#34;jwt_auth plugin&#34;</span>, <span style=color:#66d9ef>function</span>()
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> secret <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;test_secret&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> <span style=color:#66d9ef>function</span> <span style=color:#a6e22e>make_token</span>(payload)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>return</span> jwt:sign(secret, {
+</span></span><span style=display:flex><span>            header  <span style=color:#f92672>=</span> { typ <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;JWT&#34;</span>, alg <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;HS256&#34;</span> },
+</span></span><span style=display:flex><span>            payload <span style=color:#f92672>=</span> payload,
+</span></span><span style=display:flex><span>        })
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    it(<span style=color:#e6db74>&#34;rejects request without token&#34;</span>, <span style=color:#66d9ef>function</span>()
+</span></span><span style=display:flex><span>        ngx.req.get_headers <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>() <span style=color:#66d9ef>return</span> {} <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>        assert.error_matches(<span style=color:#66d9ef>function</span>()
+</span></span><span style=display:flex><span>            jwt_auth:access({ secret <span style=color:#f92672>=</span> secret })
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>end</span>, <span style=color:#e6db74>&#34;ngx.exit:401&#34;</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    it(<span style=color:#e6db74>&#34;accepts valid token&#34;</span>, <span style=color:#66d9ef>function</span>()
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>local</span> token <span style=color:#f92672>=</span> make_token({ sub <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;123&#34;</span>, exp <span style=color:#f92672>=</span> os.time() <span style=color:#f92672>+</span> <span style=color:#ae81ff>3600</span> })
+</span></span><span style=display:flex><span>        ngx.req.get_headers <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>()
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> { authorization <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;Bearer &#34;</span> <span style=color:#f92672>..</span> token }
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>        assert.has_no_error(<span style=color:#66d9ef>function</span>()
+</span></span><span style=display:flex><span>            jwt_auth:access({ secret <span style=color:#f92672>=</span> secret })
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>end</span>)
+</span></span><span style=display:flex><span>        assert.equals(<span style=color:#e6db74>&#34;123&#34;</span>, ngx.ctx.user.id)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    it(<span style=color:#e6db74>&#34;rejects expired token&#34;</span>, <span style=color:#66d9ef>function</span>()
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>local</span> token <span style=color:#f92672>=</span> make_token({ sub <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;123&#34;</span>, exp <span style=color:#f92672>=</span> os.time() <span style=color:#f92672>-</span> <span style=color:#ae81ff>1</span> })
+</span></span><span style=display:flex><span>        ngx.req.get_headers <span style=color:#f92672>=</span> <span style=color:#66d9ef>function</span>()
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>return</span> { authorization <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;Bearer &#34;</span> <span style=color:#f92672>..</span> token }
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>        assert.error_matches(<span style=color:#66d9ef>function</span>()
+</span></span><span style=display:flex><span>            jwt_auth:access({ secret <span style=color:#f92672>=</span> secret })
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>end</span>, <span style=color:#e6db74>&#34;ngx.exit:401&#34;</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>)
+</span></span></code></pre></div><h2 id=testnginx-集成测试>Test::Nginx 集成测试
+<a class=header-anchor href=#testnginx-%e9%9b%86%e6%88%90%e6%b5%8b%e8%af%95></a></h2><p>单元测试验证单个模块，集成测试验证整个请求链路。<code>Test::Nginx</code> 是 OpenResty 官方的集成测试框架，用 Perl 编写，通过启动真实的 Nginx 进程来测试。</p><h3 id=安装-1>安装
+<a class=header-anchor href=#%e5%ae%89%e8%a3%85-1></a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-bash data-lang=bash><span style=display:flex><span>cpan Test::Nginx
+</span></span><span style=display:flex><span><span style=color:#75715e># 或</span>
+</span></span><span style=display:flex><span>cpanm Test::Nginx
+</span></span></code></pre></div><h3 id=测试文件格式>测试文件格式
+<a class=header-anchor href=#%e6%b5%8b%e8%af%95%e6%96%87%e4%bb%b6%e6%a0%bc%e5%bc%8f></a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-perl data-lang=perl><span style=display:flex><span><span style=color:#75715e># t/jwt_auth.t</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>use</span> Test::Nginx::Socket <span style=color:#e6db74>&#39;no_plan&#39;</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 运行测试前执行的 Perl 代码</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>our</span> $secret <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;test_secret&#34;</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>run_tests();
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>__DATA__
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#f92672>===</span> TEST <span style=color:#ae81ff>1</span>: missing token returns <span style=color:#ae81ff>401</span>
+</span></span><span style=display:flex><span><span style=color:#f92672>---</span> config
+</span></span><span style=display:flex><span>    location <span style=color:#e6db74>/api/</span>test {
+</span></span><span style=display:flex><span>        access_by_lua_block {
+</span></span><span style=display:flex><span>            <span style=color:#f92672>--</span> 配置测试用的 secret
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>package</span><span style=color:#f92672>.</span>loaded[<span style=color:#e6db74>&#34;resty.jwt_secret&#34;</span>] <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;test_secret&#34;</span>
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>require</span>(<span style=color:#e6db74>&#34;plugins.jwt_auth&#34;</span>):access({
+</span></span><span style=display:flex><span>                secret <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;test_secret&#34;</span>,
+</span></span><span style=display:flex><span>                enabled <span style=color:#f92672>=</span> true,
+</span></span><span style=display:flex><span>            })
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>        content_by_lua_block {
+</span></span><span style=display:flex><span>            ngx<span style=color:#f92672>.</span>say(<span style=color:#e6db74>&#34;ok&#34;</span>)
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span><span style=color:#f92672>---</span> request
+</span></span><span style=display:flex><span>GET <span style=color:#e6db74>/api/</span>test
+</span></span><span style=display:flex><span><span style=color:#f92672>---</span> response_body_like: missing token
+</span></span><span style=display:flex><span><span style=color:#f92672>---</span> error_code: <span style=color:#ae81ff>401</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#f92672>===</span> TEST <span style=color:#ae81ff>2</span>: valid token passes
+</span></span><span style=display:flex><span><span style=color:#f92672>---</span> config
+</span></span><span style=display:flex><span>    location <span style=color:#e6db74>/api/</span>test {
+</span></span><span style=display:flex><span>        access_by_lua_block {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>require</span>(<span style=color:#e6db74>&#34;plugins.jwt_auth&#34;</span>):access({
+</span></span><span style=display:flex><span>                secret  <span style=color:#f92672>=</span> <span style=color:#e6db74>&#34;test_secret&#34;</span>,
+</span></span><span style=display:flex><span>                enabled <span style=color:#f92672>=</span> true,
+</span></span><span style=display:flex><span>            })
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>        content_by_lua_block {
+</span></span><span style=display:flex><span>            ngx<span style=color:#f92672>.</span>say(<span style=color:#e6db74>&#34;user:&#34;</span>, ngx<span style=color:#f92672>.</span>ctx<span style=color:#f92672>.</span>user<span style=color:#f92672>.</span>id)
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span><span style=color:#f92672>---</span> request eval
+</span></span><span style=display:flex><span><span style=color:#66d9ef>use</span> POSIX <span style=color:#e6db74>qw(time)</span>;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>my</span> $exp <span style=color:#f92672>=</span> time() <span style=color:#f92672>+</span> <span style=color:#ae81ff>3600</span>;
+</span></span><span style=display:flex><span><span style=color:#75715e># 生成 JWT（简化，实际用 Perl 的 JWT 库）</span>
+</span></span><span style=display:flex><span><span style=color:#e6db74>&#34;GET /api/test\nAuthorization: Bearer eyJ...&#34;</span>
+</span></span><span style=display:flex><span><span style=color:#f92672>---</span> response_body_like: user:123
+</span></span><span style=display:flex><span><span style=color:#f92672>---</span> error_code: <span style=color:#ae81ff>200</span>
+</span></span></code></pre></div><h3 id=运行测试>运行测试
+<a class=header-anchor href=#%e8%bf%90%e8%a1%8c%e6%b5%8b%e8%af%95></a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-bash data-lang=bash><span style=display:flex><span>prove -r t/           <span style=color:#75715e># 运行所有测试</span>
+</span></span><span style=display:flex><span>prove t/jwt_auth.t    <span style=color:#75715e># 运行单个文件</span>
+</span></span><span style=display:flex><span>prove -v t/           <span style=color:#75715e># 详细输出</span>
+</span></span></code></pre></div><h2 id=本地调试技巧>本地调试技巧
+<a class=header-anchor href=#%e6%9c%ac%e5%9c%b0%e8%b0%83%e8%af%95%e6%8a%80%e5%b7%a7></a></h2><h3 id=1-合理使用-ngxlog>1. 合理使用 ngx.log
+<a class=header-anchor href=#1-%e5%90%88%e7%90%86%e4%bd%bf%e7%94%a8-ngxlog></a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- 开发时用 DEBUG 级别记录详细信息</span>
+</span></span><span style=display:flex><span>ngx.log(ngx.DEBUG, <span style=color:#e6db74>&#34;request args: &#34;</span>, require(<span style=color:#e6db74>&#34;cjson&#34;</span>).encode(ngx.req.get_uri_args()))
+</span></span><span style=display:flex><span>ngx.log(ngx.DEBUG, <span style=color:#e6db74>&#34;route matched: &#34;</span>, ngx.ctx.route <span style=color:#f92672>and</span> ngx.ctx.route.id)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 注意：字符串拼接在 DEBUG 日志里也有开销</span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 可以先判断日志级别（OpenResty 没有直接的 is_debug_enabled，但可以用 pcall 技巧）</span>
+</span></span></code></pre></div><p>在 nginx.conf 里把日志级别调到 debug：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-nginx data-lang=nginx><span style=display:flex><span><span style=color:#66d9ef>error_log</span> <span style=color:#e6db74>logs/error.log</span> <span style=color:#e6db74>debug</span>;
+</span></span></code></pre></div><p>生产环境记得改回 warn 或 error，debug 级别日志量极大。</p><h3 id=2-实时查看日志>2. 实时查看日志
+<a class=header-anchor href=#2-%e5%ae%9e%e6%97%b6%e6%9f%a5%e7%9c%8b%e6%97%a5%e5%bf%97></a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#75715e># 实时追踪错误日志</span>
+</span></span><span style=display:flex><span>tail -f logs/error.log
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 过滤特定内容</span>
+</span></span><span style=display:flex><span>tail -f logs/error.log | grep <span style=color:#e6db74>&#34;jwt_auth&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 查看最近的错误</span>
+</span></span><span style=display:flex><span>tail -100 logs/error.log | grep <span style=color:#e6db74>&#34;\[error\]&#34;</span>
+</span></span></code></pre></div><h3 id=3-使用-ngxsay-临时-dump>3. 使用 ngx.say 临时 dump
+<a class=header-anchor href=#3-%e4%bd%bf%e7%94%a8-ngxsay-%e4%b8%b4%e6%97%b6-dump></a></h3><p>调试复杂数据结构时，临时用 <code>ngx.say</code> 输出：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- 临时调试，上线前记得删除！</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> cjson <span style=color:#f92672>=</span> require <span style=color:#e6db74>&#34;cjson&#34;</span>
+</span></span><span style=display:flex><span>ngx.say(<span style=color:#e6db74>&#34;DEBUG: &#34;</span>, cjson.encode({
+</span></span><span style=display:flex><span>    route   <span style=color:#f92672>=</span> ngx.ctx.route,
+</span></span><span style=display:flex><span>    user    <span style=color:#f92672>=</span> ngx.ctx.user,
+</span></span><span style=display:flex><span>    headers <span style=color:#f92672>=</span> ngx.req.get_headers(),
+</span></span><span style=display:flex><span>}))
+</span></span><span style=display:flex><span><span style=color:#66d9ef>return</span> ngx.exit(<span style=color:#ae81ff>200</span>)
+</span></span></code></pre></div><h2 id=常见报错排查手册>常见报错排查手册
+<a class=header-anchor href=#%e5%b8%b8%e8%a7%81%e6%8a%a5%e9%94%99%e6%8e%92%e6%9f%a5%e6%89%8b%e5%86%8c></a></h2><p><strong><code>attempt to index a nil value</code></strong></p><p>最常见的报错，通常是某个变量没有判断 nil：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- 错误示例</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> user <span style=color:#f92672>=</span> ngx.ctx.user
+</span></span><span style=display:flex><span>ngx.say(user.name)  <span style=color:#75715e>-- 如果 user 是 nil 就崩</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 正确</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> user <span style=color:#f92672>=</span> ngx.ctx.user
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> user <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span> ngx.exit(<span style=color:#ae81ff>401</span>)
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>ngx.say(user.name)
+</span></span></code></pre></div><p><strong><code>cosocket API disabled in the current context</code></strong></p><p>在不允许使用 cosocket 的阶段（如 <code>init_by_lua</code>、<code>log_by_lua</code>）尝试做网络操作：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#75715e>-- 错误：log_by_lua 里不能用 cosocket</span>
+</span></span><span style=display:flex><span>log_by_lua_block {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>local</span> red <span style=color:#f92672>=</span> redis:new()
+</span></span><span style=display:flex><span>    red:connect(...)  <span style=color:#75715e>-- 报错！</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>-- 正确：用 timer 异步处理</span>
+</span></span><span style=display:flex><span>log_by_lua_block {
+</span></span><span style=display:flex><span>    ngx.timer.at(<span style=color:#ae81ff>0</span>, <span style=color:#66d9ef>function</span>(premature)
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>local</span> red <span style=color:#f92672>=</span> redis:new()
+</span></span><span style=display:flex><span>        red:connect(...)  <span style=color:#75715e>-- OK</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>end</span>)
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p><strong><code>no resolver defined to resolve</code></strong></p><p>在 Lua 里用域名连接外部服务，但没有配置 DNS resolver：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-nginx data-lang=nginx><span style=display:flex><span><span style=color:#75715e># nginx.conf 里加上
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>resolver</span> <span style=color:#ae81ff>8</span><span style=color:#e6db74>.8.8.8</span> <span style=color:#e6db74>valid=30s</span>;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>resolver_timeout</span> <span style=color:#e6db74>5s</span>;
+</span></span></code></pre></div><p><strong><code>lua_max_running_timers are not enough</code></strong></p><p>定时器数量超出限制，调大配置：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-nginx data-lang=nginx><span style=display:flex><span><span style=color:#66d9ef>lua_max_pending_timers</span> <span style=color:#ae81ff>2048</span>;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>lua_max_running_timers</span> <span style=color:#ae81ff>256</span>;
+</span></span></code></pre></div><p><strong><code>bad argument #1 to 'encode' (table expected, got nil)</code></strong></p><p>cjson.encode 传了 nil，在 encode 之前检查：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#66d9ef>local</span> data <span style=color:#f92672>=</span> get_data()
+</span></span><span style=display:flex><span><span style=color:#66d9ef>if</span> <span style=color:#f92672>not</span> data <span style=color:#66d9ef>then</span>
+</span></span><span style=display:flex><span>    ngx.say(<span style=color:#e6db74>&#34;null&#34;</span>)
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>return</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>end</span>
+</span></span><span style=display:flex><span>ngx.say(cjson.encode(data))
+</span></span></code></pre></div><p><strong><code>connection refused</code> 连接后端失败</strong></p><p>排查步骤：</p><ol><li>确认后端服务是否在运行：<code>curl http://backend:8080/health</code></li><li>确认网络连通性：<code>telnet backend 8080</code></li><li>查看 nginx 错误日志里的详细错误信息</li><li>检查连接池是否耗尽（日志里有 <code>no keepalive peer available</code>）</li></ol><p><strong><code>attempt to perform arithmetic on a string value</code></strong></p><p>从 <code>ngx.req.get_uri_args()</code> 或 Redis 拿到的值是字符串，要做数学运算必须先转换：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-lua data-lang=lua><span style=display:flex><span><span style=color:#66d9ef>local</span> page <span style=color:#f92672>=</span> tonumber(ngx.req.get_uri_args().page) <span style=color:#f92672>or</span> <span style=color:#ae81ff>1</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>local</span> offset <span style=color:#f92672>=</span> (page <span style=color:#f92672>-</span> <span style=color:#ae81ff>1</span>) <span style=color:#f92672>*</span> <span style=color:#ae81ff>10</span>
+</span></span></code></pre></div><h2 id=小结>小结
+<a class=header-anchor href=#%e5%b0%8f%e7%bb%93></a></h2><p>测试和调试的工具链：</p><ul><li><strong>busted</strong>：单元测试，测单个模块，需要 mock <code>ngx</code> 环境</li><li><strong>Test::Nginx</strong>：集成测试，启动真实 Nginx，测完整请求链路</li><li><strong>ngx.log + tail -f</strong>：线上问题排查的基本手段</li><li>常见报错基本都有规律，遇到一次记住一次</li></ul><p>下一篇讲性能调优——worker 配置、连接池参数、共享内存规划，以及用 wrk 压测的方法。</p></div><footer class=post-footer><div class=post-tags><a href=/tags/openresty>OpenResty
+</a><a href=/tags/%e6%b5%8b%e8%af%95>测试
+</a><a href=/tags/%e8%b0%83%e8%af%95>调试</a></div><div class=addthis_inline_share_toolbox style=text-align:center></div><hr><div class=post-copyright><img src=/imgs/cc/cc.svg width=75 height=75 align=right alt=共享知识><ul><li class=post-copyright-title><strong>文章标题：</strong>
+29 | 测试与调试</li><li class=post-copyright-author><strong>本文作者： </strong>红岩</li><li class=post-copyright-link><strong>本文链接：</strong>
+<a id=post-cr-link href=https://zanehy.github.io/blog/openresty-29-testing/ title="29 | 测试与调试">https://zanehy.github.io/blog/openresty-29-testing/</a></li><li class=post-copyright-license><strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <i class="fab fa-fw fa-creative-commons"></i><a target=_blank href=https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh>BY-NC-SA</a> 许可协议。转载请注明出处！</li></ul></div><div class=post-nav><div class="post-nav-next post-nav-item"></div><div class="post-nav-prev post-nav-item"><a href=/blog/openresty-28-plugin-system/ rel=prev title="28 | 插件系统设计与扩展">28 | 插件系统设计与扩展
+<i class="fa fa-chevron-right"></i></a></div></div></footer></article></div></div></main><footer class=footer><div class=footer-inner><div class=copyright>&copy;
+<span itemprop=copyrightYear>2024 - 2026
+</span><span class=with-love><i class="fa fa-heart"></i>
+</span><span class=author itemprop=copyrightHolder>红岩</span></div><div class=powered-by>由 <a href=https://gohugo.io title=0.123.7 target=_blank>Hugo</a> & <a href=https://github.com/hugo-next/hugo-theme-next title=4.5.3 target=_blank>Hugo NexT.Gemini</a> 强力驱动</div></div></footer><script type=text/javascript src=https://cdn.staticfile.org/animejs/3.2.1/anime.min.js defer></script><script type=text/javascript src=https://cdn.staticfile.org/viewerjs/1.11.0/viewer.min.js defer></script><script class=next-config data-name=main type=application/json>{"bookmark":{"color":"#888","enable":true,"save":"manual"},"copybtn":true,"darkmode":true,"giscus":{"cfg":{"category":"Comments","categoryid":null,"emit":false,"inputposition":"top","mapping":"title","reactions":false,"repo":"username/repo-name","repoid":null,"theme":"preferred_color_scheme"},"js":"https://giscus.app/client.js"},"hostname":"https://zanehy.github.io/","i18n":{"ds_day":" 天前","ds_days":" 天 ","ds_hour":" 小时前","ds_hours":" 小时 ","ds_just":"刚刚","ds_min":" 分钟前","ds_mins":" 分钟","ds_month":" 个月前","ds_years":" 年 ","empty":"没有找到任何搜索结果：${query}","hits":"找到 ${hits} 个搜索结果","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","placeholder":"搜索..."},"lang":"zh-CN","lazyload":false,"localSearch":{"enable":true,"limit":1e3,"path":"/searchindexes.xml","preload":true,"topnperarticle":-1,"trigger":"auto","unescape":true},"motion":{"async":true,"enable":true,"transition":{"collheader":"fadeInLeft","postblock":"fadeIn","postbody":"fadeInDown","postheader":"fadeInDown","sidebar":"fadeInUp"}},"postmeta":{"comments":{"enable":true,"plugin":"waline"},"views":{"enable":true,"plugin":"busuanzi"}},"root":"/","scheme":"Gemini","sidebar":{"display":"post","offset":12,"padding":18,"position":"left","width":256},"vendor":{"plugins":"qiniu","router":"https://cdn.staticfile.org"},"version":"4.5.3","waline":{"cfg":{"emoji":false,"imguploader":false,"placeholder":"请文明发言哟 ヾ(≧▽≦*)o","reaction":true,"reactiontext":["点赞","踩一下","得意","不屑","尴尬","睡觉"],"reactiontitle":"你认为这篇文章怎么样？","requiredmeta":["nick","mail"],"serverurl":null,"sofa":"快来发表你的意见吧 (≧∀≦)ゞ","wordlimit":200},"css":{"alias":"waline","file":"dist/waline.css","name":"@waline/client","version":"2.13.0"},"js":{"alias":"waline","file":"dist/waline.js","name":"@waline/client","version":"2.13.0"}}}</script><script type=text/javascript src=/js/main.min.0b6f435ab2b781f04f78d578f42b492c126726d94b54a88d0af9aaf3c50c4457.js defer></script></body></html>
