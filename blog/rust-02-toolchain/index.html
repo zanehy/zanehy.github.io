@@ -1,0 +1,248 @@
+<!doctype html><html lang=zh-CN data-theme=dark><head><meta charset=UTF-8><meta name=viewport content="width=device-width"><meta name=theme-color content="#222" media="(prefers-color-scheme: dark)"><meta name=generator content="Hugo 0.123.7"><link rel="shortcut icon" type=image/x-icon href=/imgs/icons/zanehy.ico><link rel=icon type=image/x-icon href=/imgs/icons/zanehy.ico><link rel=icon type=image/png sizes=16x16 href=/imgs/icons/zanehy_16x16.jpg><link rel=icon type=image/png sizes=32x32 href=/imgs/icons/zanehy_32_32.jpg><link rel=apple-touch-icon sizes=180x180 href=/imgs/zanehy.jpg><meta itemprop=name content="02 | 工具链与项目结构：Rust 的工程基础"><meta itemprop=description content="搞清楚 rustup、cargo、rustfmt、clippy 各自干什么，理解 Rust 项目的结构和模块系统，掌握 cargo 的常用工作流。"><meta itemprop=datePublished zgotmplz><meta itemprop=dateModified zgotmplz><meta itemprop=image content="https://zanehy.github.io/imgs/zanehy.jpg"><meta itemprop=keywords content="Rust,Cargo,工具链"><meta property="og:type" content="article"><meta property="og:title" content="02 | 工具链与项目结构：Rust 的工程基础"><meta property="og:description" content="搞清楚 rustup、cargo、rustfmt、clippy 各自干什么，理解 Rust 项目的结构和模块系统，掌握 cargo 的常用工作流。"><meta property="og:image" content="/imgs/zanehy.jpg"><meta property="og:image:width" content="312"><meta property="og:image:height" content="312"><meta property="og:image:type" content="image/jpeg/png/svg/jpg"><meta property="og:url" content="https://zanehy.github.io/blog/rust-02-toolchain/"><meta property="og:site_name" content="红岩 | 个人博客"><meta property="og:locale" content="zh-CN"><meta property="article:author" content="红岩"><meta property="article:published_time" content="2026-04-17 19:01:00 +0800 CST"><meta property="article:modified_time" content="2026-04-17 19:01:00 +0800 CST"><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/font-awesome/6.1.2/css/all.min.css><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/animate.css/3.1.1/animate.min.css><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/viewerjs/1.11.0/viewer.min.css><link rel=stylesheet href=/css/main.min.33a74da2976ebbac6b4f1852845dfaad330b3fbd6c4e4b31ec4820969c3d5038.css><script type=text/javascript>(function(){localDB={set:function(e,t,n){if(n===0)return;const s=new Date,o=n*864e5,i={value:t,expiry:s.getTime()+o};localStorage.setItem(e,JSON.stringify(i))},get:function(e){const t=localStorage.getItem(e);if(!t)return void 0;const n=JSON.parse(t),s=new Date;return s.getTime()>n.expiry?(localStorage.removeItem(e),void 0):n.value}},theme={active:function(){const e=localDB.get("theme");if(e==null)return;theme.toggle(e),window.matchMedia("(prefers-color-scheme: dark)").addListener(function(e){theme.toggle(e.matches?"dark":"light")})},toggle:function(e){document.documentElement.setAttribute("data-theme",e),localDB.set("theme",e,2);const t=document.querySelector("iframe.giscus-frame");if(t){const n={setConfig:{theme:e}};t.contentWindow.postMessage({giscus:n},"https://giscus.app")}}},theme.active()})(window)</script><script class=next-config data-name=page type=application/json>{"comments":false,"isHome":false,"isPage":true,"path":"rust-02-toolchain","permalink":"https://zanehy.github.io/blog/rust-02-toolchain/","title":"02 | 工具链与项目结构：Rust 的工程基础","waline":{"js":[{"alias":"waline","alias_name":"@waline/client","file":"dist/pageview.js","name":"pageview","version":"2.13.0"},{"alias":"waline","alias_name":"@waline/client","file":"dist/comment.js","name":"comment","version":"2.13.0"}]}}</script><script type=text/javascript>document.addEventListener("DOMContentLoaded",()=>{var e=document.createElement("script");e.charset="UTF-8",e.src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js",e.async=!1,e.defer=!0,document.head.appendChild(e),e.onload=function(){NexT.utils.fmtBusuanzi()}})</script><title>02 | 工具链与项目结构：Rust 的工程基础 - 红岩 | 个人博客</title><noscript><link rel=stylesheet href=/css/noscript.css></noscript></head><body itemscope itemtype=http://schema.org/WebPage class=use-motion><div class=headband></div><main class=main><header class=header itemscope itemtype=http://schema.org/WPHeader><div class=header-inner><div class=site-brand-container><div class=site-nav-toggle><div class=toggle aria-label role=button><span class=toggle-line></span>
+<span class=toggle-line></span>
+<span class=toggle-line></span></div></div><div class=site-meta><a href=/ class=brand rel=start><i class=logo-line></i><h1 class=site-title>红岩 | 个人博客</h1><i class=logo-line></i></a><p class=site-subtitle itemprop=description>记录生活，记录成长</p></div><div class=site-nav-right><div class="toggle popup-trigger"><i class="fa fa-search fa-fw fa-lg"></i></div></div></div><nav class=site-nav><ul class="main-menu menu"><li class="menu-item menu-item-home"><a href=/ class=hvr-icon-pulse rel=section><i class="fa fa-home hvr-icon"></i>首页</a></li><li class="menu-item menu-item-about"><a href=/about.html class=hvr-icon-pulse rel=section><i class="fa fa-user hvr-icon"></i>关于</a></li><li class="menu-item menu-item-my_blog"><a href=/blog/ class=hvr-icon-pulse rel=section><i class="fa fa-blog hvr-icon"></i>技术博客</a></li><li class="menu-item menu-item-my_life"><a href=/life/ class=hvr-icon-pulse rel=section><i class="fa fa-pizza-slice hvr-icon"></i>生活点滴</a></li><li class="menu-item menu-item-archives"><a href=/archives/ class=hvr-icon-pulse rel=section><i class="fa fa-archive hvr-icon"></i>归档日志
+<span class=badge>35</span></a></li><li class="menu-item menu-item-search"><a role=button class="popup-trigger hvr-icon-pulse"><i class="fa fa-search fa-fw hvr-icon"></i>搜索</a></li></ul></nav><div class=search-pop-overlay><div class="popup search-popup"><div class=search-header><span class=search-icon><i class="fa fa-search"></i></span><div class=search-input-container><input autocomplete=off autocapitalize=off maxlength=80 placeholder=搜索... spellcheck=false type=search class=search-input></div><span class=popup-btn-close role=button><i class="fa fa-times-circle"></i></span></div><div class="search-result-container no-result"><div class=search-result-icon><i class="fa fa-spinner fa-pulse fa-5x"></i></div></div></div></div></div><div class="toggle sidebar-toggle" role=button><span class=toggle-line></span>
+<span class=toggle-line></span>
+<span class=toggle-line></span></div><aside class=sidebar><div class="sidebar-inner sidebar-nav-active sidebar-toc-active"><ul class=sidebar-nav><li class=sidebar-nav-toc>文章目录</li><li class=sidebar-nav-overview>站点概览</li></ul><div class=sidebar-panel-container><div class="post-toc-wrap sidebar-panel"><div class="post-toc animated"><nav id=TableOfContents><ul><li><a href=#rustup管理-rust-本身>rustup：管理 Rust 本身</a></li><li><a href=#cargorust-的核心工具>cargo：Rust 的核心工具</a></li><li><a href=#cargotoml-详解>Cargo.toml 详解</a></li><li><a href=#workspace多包项目>Workspace：多包项目</a></li><li><a href=#模块系统mod--use--pub>模块系统：mod / use / pub</a></li><li><a href=#rustfmt统一代码风格>rustfmt：统一代码风格</a></li><li><a href=#clippy超级-lint>clippy：超级 lint</a></li><li><a href=#一个完整的工作流示例>一个完整的工作流示例</a></li><li><a href=#小结>小结</a></li></ul></nav></div></div><div class="site-overview-wrap sidebar-panel"><div class="site-author site-overview-item animated" itemprop=author itemscope itemtype=http://schema.org/Person><img class=site-author-image itemprop=image alt=红岩 src=/imgs/img-lazy-loading.gif data-src=/imgs/zanehy.jpg><p class=site-author-name itemprop=name>红岩</p><div class=site-description itemprop=description></div></div><div class="site-state-wrap site-overview-item animated"><nav class=site-state><div class="site-state-item site-state-posts"><a href=/archives/><span class=site-state-item-count>35</span>
+<span class=site-state-item-name>日志</span></a></div><div class="site-state-item site-state-categories"><a href=/categories/><span class=site-state-item-count>3</span>
+<span class=site-state-item-name>分类</span></a></div><div class="site-state-item site-state-tags"><a href=/tags/><span class=site-state-item-count>53</span>
+<span class=site-state-item-name>标签</span></a></div></nav></div><div class="links-of-social site-overview-item animated"></div></div></div></div><div id=siteinfo-card-widget class=sidebar-card-widget><div class=item-headline><i class="fas fa-chart-line"></i>
+<span>网站资讯</span></div><div class=siteinfo><div class=siteinfo-item><div class=item-name><i class="fa-solid fa-calendar-check"></i>已运行：</div><div class=item-count id=runTimes data-publishdate=2026-03-04T17:00:00+08:00></div></div><div class=siteinfo-item><div class=item-name><i class="fas fa fa-user"></i>总访客数：</div><div class=item-count id=busuanzi_value_site_uv><i class="fa fa-sync fa-spin"></i></div></div><div class=siteinfo-item><div class=item-name><i class="fas fa fa-eye"></i>页面浏览：</div><div class=item-count id=busuanzi_value_site_pv><i class="fa fa-sync fa-spin"></i></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-font"></i>总字数：</div><div class=item-count id=wordsCount data-count=69944></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-mug-hot"></i>阅读约：</div><div class=item-count id=readTimes data-times=161></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-clock-rotate-left"></i>最后更新于：</div><div class=item-count id=last-push-date data-lastpushdate=2026-04-17T19:01:00+08:00></div></div></div></div></aside><div class=sidebar-dimmer></div></header><div class=tool-buttons><div id=toggle-theme class=button title=深浅模式切换><i class="fas fa-adjust"></i></div><div class=back-to-top role=button title=返回顶部><i class="fa fa-arrow-up"></i>
+<span>0%</span></div></div><div class=reading-progress-bar></div><a role=button class="book-mark-link book-mark-link-fixed"></a><a href=https://github.com/zanehy rel="noopener external nofollow noreferrer" target=_blank title="Follow me on GitHub" class="exturl github-corner"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0 0 115 115h15l12 27L250 250V0z"/><path d="M128.3 109C113.8 99.7 119 89.6 119 89.6 122 82.7 120.5 78.6 120.5 78.6 119.2 72 123.4 76.3 123.4 76.3 127.3 80.9 125.5 87.3 125.5 87.3 122.9 97.6 130.6 101.9 134.4 103.2" fill="currentcolor" style="transform-origin:130px 106px" class="octo-arm"/><path d="M115 115C114.9 115.1 118.7 116.5 119.8 115.4l13.9-13.8C136.9 99.2 139.9 98.4 142.2 98.6 133.8 88 127.5 74.4 143.8 58 148.5 53.4 154 51.2 159.7 51 160.3 49.4 163.2 43.6 171.4 40.1 171.4 40.1 176.1 42.5 178.8 56.2 183.1 58.6 187.2 61.8 190.9 65.4 194.5 69 197.7 73.2 200.1 77.6 213.8 80.2 216.3 84.9 216.3 84.9 212.7 93.1 206.9 96 205.4 96.6 205.1 102.4 203 107.8 198.3 112.5 181.9 128.9 168.3 122.5 157.7 114.1 157.9 116.9 156.7 120.9 152.7 124.9L141 136.5C139.8 137.7 141.6 141.9 141.8 141.8z" fill="currentcolor" class="octo-body"/></svg>
+</a><script type=text/javascript src=//sidecar.gitter.im/dist/sidecar.v1.js async></script><script type=text/javascript>((window.gitter={}).chat={}).options={room:"hugo-next/community"}</script><noscript><div class=noscript-warning>Theme NexT works best with JavaScript enabled</div></noscript><div class="main-inner post posts-expand"><div class=post-block><article itemscope itemtype=http://schema.org/Article class=post-content lang><link itemprop=mainEntityOfPage href=https://zanehy.github.io/blog/rust-02-toolchain/><span hidden itemprop=author itemscope itemtype=http://schema.org/Person><meta itemprop=image content="/imgs/zanehy.jpg"><meta itemprop=name content="红岩"></span><span hidden itemprop=publisher itemscope itemtype=http://schema.org/Organization><meta itemprop=name content="红岩"><meta itemprop=description content></span><span hidden itemprop=post itemscope itemtype=http://schema.org/CreativeWork><meta itemprop=name content="02 | 工具链与项目结构：Rust 的工程基础"><meta itemprop=description content="搞清楚 rustup、cargo、rustfmt、clippy 各自干什么，理解 Rust 项目的结构和模块系统，掌握 cargo 的常用工作流。"></span><header class=post-header><h1 class=post-title itemprop="name headline">02 | 工具链与项目结构：Rust 的工程基础</h1><div class=post-meta-container><div class=post-meta-items><span class=post-meta-item><span class=post-meta-item-icon><i class="far fa-calendar"></i>
+</span><span class=post-meta-item-text title=发表于>发表于：
+</span><time title="创建时间：2026-04-17 19:01:00 +0800 CST" itemprop="dateCreated datePublished" datetime="2026-04-17 19:01:00 +0800 CST">2026-04-17
+</time></span><span class=post-meta-item><span class=post-meta-item-icon><i class="far fa-folder-open"></i>
+</span><span class=post-meta-item-text title=分类于>分类于：
+</span><span itemprop=about itemscope itemtype=http://schema.org/Thing><a href=/categories/rust itemprop=url rel=index><span itemprop=name>Rust</span></a></span></span></div><div class=post-meta-items><span class=post-meta-item title=字数><span class=post-meta-item-icon><i class="far fa-file-word"></i>
+</span><span class=post-meta-item-text>字数：</span>
+<span>2582</span>
+</span><span class=post-meta-item title=阅读><span class=post-meta-item-icon><i class="far fa-clock"></i>
+</span><span class=post-meta-item-text>阅读：&ap;</span>
+<span>6分钟</span>
+</span><span class=post-meta-item title=浏览><span class=post-meta-item-icon><i class="far fa-eye"></i>
+</span><span class=post-meta-item-text>浏览：
+</span><span id=busuanzi_value_page_pv data-path=/blog/rust-02-toolchain/><i class="fa fa-sync fa-spin"></i></span></span></div></div></header><div class="post-body autonumber" itemprop=articleBody><p>在正式写 Rust 代码之前，先把工具链搞清楚。工具用顺手了，后面的学习会省很多力气。</p><p>Rust 的工具链设计得相当完整，安装好之后你会得到一整套开箱即用的工具：编译器、包管理器、格式化工具、代码检查工具——它们都来自官方，不需要到处找第三方替代品。</p><h2 id=rustup管理-rust-本身>rustup：管理 Rust 本身
+<a class=header-anchor href=#rustup%e7%ae%a1%e7%90%86-rust-%e6%9c%ac%e8%ba%ab></a></h2><p><code>rustup</code> 是 Rust 的工具链管理器，类似 Python 的 <code>pyenv</code> 或 Node 的 <code>nvm</code>。它负责安装、更新和切换不同版本的 Rust。</p><p><strong>安装 Rust：</strong></p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-bash data-lang=bash><span style=display:flex><span>curl --proto <span style=color:#e6db74>&#39;=https&#39;</span> --tlsv1.2 -sSf https://sh.rustup.rs | sh
+</span></span></code></pre></div><p>安装完成后，rustup 会在你的 PATH 里加入 <code>~/.cargo/bin</code>，所有工具都放在这里。</p><p><strong>常用命令：</strong></p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#75715e># 更新到最新稳定版</span>
+</span></span><span style=display:flex><span>rustup update
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 查看当前版本</span>
+</span></span><span style=display:flex><span>rustc --version
+</span></span><span style=display:flex><span>cargo --version
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 安装 nightly 版本（某些实验性特性需要）</span>
+</span></span><span style=display:flex><span>rustup install nightly
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 为当前项目切换到 nightly</span>
+</span></span><span style=display:flex><span>rustup override set nightly
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 查看已安装的工具链</span>
+</span></span><span style=display:flex><span>rustup toolchain list
+</span></span></code></pre></div><p><strong>三个发布频道：</strong></p><ul><li><strong>stable</strong>：稳定版，每六周发布一次，生产环境用这个</li><li><strong>beta</strong>：下一个 stable 的预览版</li><li><strong>nightly</strong>：每日构建，包含最新的实验性特性，某些库（比如早期的 async trait）依赖它</li></ul><p>绝大多数情况下用 stable 就够了。</p><h2 id=cargorust-的核心工具>cargo：Rust 的核心工具
+<a class=header-anchor href=#cargorust-%e7%9a%84%e6%a0%b8%e5%bf%83%e5%b7%a5%e5%85%b7></a></h2><p><code>cargo</code> 是 Rust 的构建系统和包管理器，它把编译、测试、依赖管理、发布全包了。和 Go 的 <code>go</code> 命令类似，但功能更丰富。</p><p><strong>创建项目：</strong></p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#75715e># 创建二进制项目（可执行程序）</span>
+</span></span><span style=display:flex><span>cargo new my-app
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 创建库项目</span>
+</span></span><span style=display:flex><span>cargo new my-lib --lib
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 在已有目录里初始化</span>
+</span></span><span style=display:flex><span>cargo init
+</span></span></code></pre></div><p>新建项目后的目录结构：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-fallback data-lang=fallback><span style=display:flex><span>my-app/
+</span></span><span style=display:flex><span>├── Cargo.toml      # 项目配置文件（类似 package.json / go.mod）
+</span></span><span style=display:flex><span>├── Cargo.lock      # 依赖锁定文件（自动生成）
+</span></span><span style=display:flex><span>└── src/
+</span></span><span style=display:flex><span>    └── main.rs     # 程序入口
+</span></span></code></pre></div><p><strong>常用命令：</strong></p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#75715e># 编译（debug 模式，快但慢运行）</span>
+</span></span><span style=display:flex><span>cargo build
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 编译 + 运行</span>
+</span></span><span style=display:flex><span>cargo run
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 发布编译（优化，慢但快运行）</span>
+</span></span><span style=display:flex><span>cargo build --release
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 运行测试</span>
+</span></span><span style=display:flex><span>cargo test
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 检查代码是否能编译（不生成产物，比 build 快很多）</span>
+</span></span><span style=display:flex><span>cargo check
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 添加依赖</span>
+</span></span><span style=display:flex><span>cargo add serde
+</span></span><span style=display:flex><span>cargo add tokio --features full
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 查看依赖树</span>
+</span></span><span style=display:flex><span>cargo tree
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 清理构建产物</span>
+</span></span><span style=display:flex><span>cargo clean
+</span></span></code></pre></div><p><code>cargo check</code> 是日常开发中最常用的命令之一——它只做类型检查和借用检查，不生成二进制，速度比 <code>cargo build</code> 快几倍，适合边写边检查。</p><h2 id=cargotoml-详解>Cargo.toml 详解
+<a class=header-anchor href=#cargotoml-%e8%af%a6%e8%a7%a3></a></h2><p><code>Cargo.toml</code> 是项目的核心配置文件，用 TOML 格式编写。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-toml data-lang=toml><span style=display:flex><span>[<span style=color:#a6e22e>package</span>]
+</span></span><span style=display:flex><span><span style=color:#a6e22e>name</span> = <span style=color:#e6db74>&#34;my-app&#34;</span>          <span style=color:#75715e># 包名</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>version</span> = <span style=color:#e6db74>&#34;0.1.0&#34;</span>        <span style=color:#75715e># 版本号（语义化版本）</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>edition</span> = <span style=color:#e6db74>&#34;2021&#34;</span>         <span style=color:#75715e># Rust edition，推荐用 2021</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>authors</span> = [<span style=color:#e6db74>&#34;Your Name &lt;you@example.com&gt;&#34;</span>]
+</span></span><span style=display:flex><span><span style=color:#a6e22e>description</span> = <span style=color:#e6db74>&#34;A brief description&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>[<span style=color:#a6e22e>dependencies</span>]
+</span></span><span style=display:flex><span><span style=color:#75715e># 来自 crates.io 的依赖</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>serde</span> = { <span style=color:#a6e22e>version</span> = <span style=color:#e6db74>&#34;1&#34;</span>, <span style=color:#a6e22e>features</span> = [<span style=color:#e6db74>&#34;derive&#34;</span>] }
+</span></span><span style=display:flex><span><span style=color:#a6e22e>tokio</span> = { <span style=color:#a6e22e>version</span> = <span style=color:#e6db74>&#34;1&#34;</span>, <span style=color:#a6e22e>features</span> = [<span style=color:#e6db74>&#34;full&#34;</span>] }
+</span></span><span style=display:flex><span><span style=color:#a6e22e>anyhow</span> = <span style=color:#e6db74>&#34;1&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 来自 Git 的依赖</span>
+</span></span><span style=display:flex><span><span style=color:#75715e># some-lib = { git = &#34;https://github.com/user/repo&#34;, branch = &#34;main&#34; }</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 来自本地路径的依赖（monorepo 常用）</span>
+</span></span><span style=display:flex><span><span style=color:#75715e># my-utils = { path = &#34;../my-utils&#34; }</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>[<span style=color:#a6e22e>dev-dependencies</span>]
+</span></span><span style=display:flex><span><span style=color:#75715e># 只在测试和 benchmark 中用的依赖</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>mockito</span> = <span style=color:#e6db74>&#34;1&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>[<span style=color:#a6e22e>build-dependencies</span>]
+</span></span><span style=display:flex><span><span style=color:#75715e># 构建脚本用的依赖</span>
+</span></span><span style=display:flex><span><span style=color:#75715e># cc = &#34;1&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>[<span style=color:#a6e22e>profile</span>.<span style=color:#a6e22e>release</span>]
+</span></span><span style=display:flex><span><span style=color:#75715e># 发布版本的优化配置</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>opt-level</span> = <span style=color:#ae81ff>3</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>lto</span> = <span style=color:#66d9ef>true</span>              <span style=color:#75715e># Link Time Optimization，减小二进制体积</span>
+</span></span></code></pre></div><p><strong>关于 edition：</strong></p><p>Rust 有 2015、2018、2021 三个 edition，每个 edition 会引入一些语法和语义上的改进。不同 edition 的包可以互相依赖，没有兼容性问题。新项目统一用 <code>2021</code>。</p><p><strong>版本号规则：</strong></p><p>依赖的版本号遵循语义化版本（SemVer），cargo 有一套版本解析规则：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-toml data-lang=toml><span style=display:flex><span><span style=color:#a6e22e>serde</span> = <span style=color:#e6db74>&#34;1&#34;</span>          <span style=color:#75715e># 等价于 &gt;=1.0.0, &lt;2.0.0</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>serde</span> = <span style=color:#e6db74>&#34;1.0&#34;</span>        <span style=color:#75715e># 等价于 &gt;=1.0.0, &lt;2.0.0</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>serde</span> = <span style=color:#e6db74>&#34;=1.0.130&#34;</span>   <span style=color:#75715e># 精确版本</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>serde</span> = <span style=color:#e6db74>&#34;&gt;=1.0, &lt;2&#34;</span>  <span style=color:#75715e># 手动范围</span>
+</span></span></code></pre></div><h2 id=workspace多包项目>Workspace：多包项目
+<a class=header-anchor href=#workspace%e5%a4%9a%e5%8c%85%e9%a1%b9%e7%9b%ae></a></h2><p>当项目变大，或者需要把代码拆成多个独立的 crate 时，用 workspace 来组织。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-fallback data-lang=fallback><span style=display:flex><span>my-project/
+</span></span><span style=display:flex><span>├── Cargo.toml          # workspace 根配置
+</span></span><span style=display:flex><span>├── Cargo.lock          # 整个 workspace 共享一个 lock 文件
+</span></span><span style=display:flex><span>├── api/                # HTTP 服务
+</span></span><span style=display:flex><span>│   ├── Cargo.toml
+</span></span><span style=display:flex><span>│   └── src/
+</span></span><span style=display:flex><span>├── core/               # 核心业务逻辑
+</span></span><span style=display:flex><span>│   ├── Cargo.toml
+</span></span><span style=display:flex><span>│   └── src/
+</span></span><span style=display:flex><span>└── utils/              # 工具库
+</span></span><span style=display:flex><span>    ├── Cargo.toml
+</span></span><span style=display:flex><span>    └── src/
+</span></span></code></pre></div><p>根目录的 <code>Cargo.toml</code>：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-toml data-lang=toml><span style=display:flex><span>[<span style=color:#a6e22e>workspace</span>]
+</span></span><span style=display:flex><span><span style=color:#a6e22e>members</span> = [
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;api&#34;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;core&#34;</span>,
+</span></span><span style=display:flex><span>    <span style=color:#e6db74>&#34;utils&#34;</span>,
+</span></span><span style=display:flex><span>]
+</span></span><span style=display:flex><span><span style=color:#75715e># workspace 级别的依赖，各成员可以引用，避免版本不一致</span>
+</span></span><span style=display:flex><span>[<span style=color:#a6e22e>workspace</span>.<span style=color:#a6e22e>dependencies</span>]
+</span></span><span style=display:flex><span><span style=color:#a6e22e>serde</span> = { <span style=color:#a6e22e>version</span> = <span style=color:#e6db74>&#34;1&#34;</span>, <span style=color:#a6e22e>features</span> = [<span style=color:#e6db74>&#34;derive&#34;</span>] }
+</span></span><span style=display:flex><span><span style=color:#a6e22e>tokio</span> = { <span style=color:#a6e22e>version</span> = <span style=color:#e6db74>&#34;1&#34;</span>, <span style=color:#a6e22e>features</span> = [<span style=color:#e6db74>&#34;full&#34;</span>] }
+</span></span></code></pre></div><p>成员 crate 引用 workspace 依赖：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-toml data-lang=toml><span style=display:flex><span><span style=color:#75715e># api/Cargo.toml</span>
+</span></span><span style=display:flex><span>[<span style=color:#a6e22e>dependencies</span>]
+</span></span><span style=display:flex><span><span style=color:#a6e22e>serde</span> = { <span style=color:#a6e22e>workspace</span> = <span style=color:#66d9ef>true</span> }   <span style=color:#75715e># 使用 workspace 里定义的版本</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>core</span> = { <span style=color:#a6e22e>path</span> = <span style=color:#e6db74>&#34;../core&#34;</span> }    <span style=color:#75715e># 引用同 workspace 的其他成员</span>
+</span></span></code></pre></div><p>Workspace 的好处是所有成员共享一个 <code>Cargo.lock</code>，保证依赖版本一致，构建缓存也是共享的。</p><h2 id=模块系统mod--use--pub>模块系统：mod / use / pub
+<a class=header-anchor href=#%e6%a8%a1%e5%9d%97%e7%b3%bb%e7%bb%9fmod--use--pub></a></h2><p>Rust 的模块系统初学者容易搞混，理清楚几个概念就好了。</p><p><strong>模块（mod）：</strong></p><p>模块是代码的组织单位，用 <code>mod</code> 关键字声明。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#75715e>// src/main.rs
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>mod</span> math {
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 模块内的东西默认是私有的
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>add</span>(a: <span style=color:#66d9ef>i32</span>, b: <span style=color:#66d9ef>i32</span>) -&gt; <span style=color:#66d9ef>i32</span> {
+</span></span><span style=display:flex><span>        a <span style=color:#f92672>+</span> b
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 用 pub 暴露给外部
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>pub</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>multiply</span>(a: <span style=color:#66d9ef>i32</span>, b: <span style=color:#66d9ef>i32</span>) -&gt; <span style=color:#66d9ef>i32</span> {
+</span></span><span style=display:flex><span>        a <span style=color:#f92672>*</span> b
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 用路径访问模块内的公开函数
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> result <span style=color:#f92672>=</span> math::multiply(<span style=color:#ae81ff>3</span>, <span style=color:#ae81ff>4</span>);
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, result); <span style=color:#75715e>// 12
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 这行会报错：add 是私有的
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#75715e>// math::add(1, 2);
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span></code></pre></div><p><strong>文件即模块：</strong></p><p>更常见的做法是把每个模块放到单独的文件里。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-fallback data-lang=fallback><span style=display:flex><span>src/
+</span></span><span style=display:flex><span>├── main.rs
+</span></span><span style=display:flex><span>├── math.rs       # 对应 mod math
+</span></span><span style=display:flex><span>└── utils/
+</span></span><span style=display:flex><span>    ├── mod.rs    # 对应 mod utils（旧风格）
+</span></span><span style=display:flex><span>    └── string.rs # 对应 mod utils::string
+</span></span></code></pre></div><p>或者用新风格（推荐）：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-fallback data-lang=fallback><span style=display:flex><span>src/
+</span></span><span style=display:flex><span>├── main.rs
+</span></span><span style=display:flex><span>├── math.rs
+</span></span><span style=display:flex><span>└── utils.rs      # 对应 mod utils
+</span></span></code></pre></div><p>在 <code>main.rs</code> 里声明模块：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#75715e>// src/main.rs
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>mod</span> math;    <span style=color:#75715e>// 对应 src/math.rs
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>mod</span> utils;   <span style=color:#75715e>// 对应 src/utils.rs 或 src/utils/mod.rs
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    math::some_function();
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p><strong>use：引入路径</strong></p><p>每次都写全路径太麻烦，用 <code>use</code> 引入：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>use</span> std::collections::HashMap;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>use</span> std::io::{self, Read, Write}; <span style=color:#75715e>// 一次引入多个
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> map <span style=color:#f92672>=</span> HashMap::new(); <span style=color:#75715e>// 不用写 std::collections::HashMap
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    map.insert(<span style=color:#e6db74>&#34;key&#34;</span>, <span style=color:#e6db74>&#34;value&#34;</span>);
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p><strong>pub 的可见性：</strong></p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>pub</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>public_fn</span>() {}           <span style=color:#75715e>// 任何地方都能访问
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>pub</span>(<span style=color:#66d9ef>crate</span>) <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>crate_fn</span>() {}     <span style=color:#75715e>// 只有当前 crate 内能访问
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>pub</span>(<span style=color:#66d9ef>super</span>) <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>parent_fn</span>() {}    <span style=color:#75715e>// 只有父模块能访问
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>private_fn</span>() {}              <span style=color:#75715e>// 只有当前模块内能访问
+</span></span></span></code></pre></div><p>结构体的字段也遵循同样的规则：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>pub</span> <span style=color:#66d9ef>struct</span> <span style=color:#a6e22e>User</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>pub</span> name: String,    <span style=color:#75715e>// 公开
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    age: <span style=color:#66d9ef>u32</span>,            <span style=color:#75715e>// 私有，外部无法直接访问
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span></code></pre></div><h2 id=rustfmt统一代码风格>rustfmt：统一代码风格
+<a class=header-anchor href=#rustfmt%e7%bb%9f%e4%b8%80%e4%bb%a3%e7%a0%81%e9%a3%8e%e6%a0%bc></a></h2><p><code>rustfmt</code> 是官方的代码格式化工具，安装 Rust 时自带。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#75715e># 格式化当前项目</span>
+</span></span><span style=display:flex><span>cargo fmt
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 只检查，不修改（CI 里用）</span>
+</span></span><span style=display:flex><span>cargo fmt -- --check
+</span></span></code></pre></div><p>在项目根目录创建 <code>rustfmt.toml</code> 可以自定义格式规则，但绝大多数团队直接用默认配置，不折腾。Rust 社区对代码风格的统一程度远高于 Go 和 Python——基本上所有开源项目都跑 <code>cargo fmt</code>。</p><h2 id=clippy超级-lint>clippy：超级 lint
+<a class=header-anchor href=#clippy%e8%b6%85%e7%ba%a7-lint></a></h2><p><code>clippy</code> 是 Rust 的静态分析工具，比编译器的警告更进一步，会指出代码里可以改进的地方。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-bash data-lang=bash><span style=display:flex><span>cargo clippy
+</span></span></code></pre></div><p>clippy 的提示分几类：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#75715e>// clippy 会提示：这个可以简化为 .is_empty()
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>if</span> vec.len() <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span> { }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// clippy 会提示：用 ..= 更清晰
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>if</span> x <span style=color:#f92672>&gt;=</span> <span style=color:#ae81ff>0</span> <span style=color:#f92672>&amp;&amp;</span> x <span style=color:#f92672>&lt;=</span> <span style=color:#ae81ff>100</span> { }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// clippy 会提示：这个 clone 是不必要的
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>let</span> s <span style=color:#f92672>=</span> some_string.clone().to_uppercase();
+</span></span></code></pre></div><p>clippy 的建议几乎都是有道理的，养成习惯在提交代码前跑一次 <code>cargo clippy</code>，代码质量会有明显提升。</p><h2 id=一个完整的工作流示例>一个完整的工作流示例
+<a class=header-anchor href=#%e4%b8%80%e4%b8%aa%e5%ae%8c%e6%95%b4%e7%9a%84%e5%b7%a5%e4%bd%9c%e6%b5%81%e7%a4%ba%e4%be%8b></a></h2><p>把上面的工具串起来，典型的日常开发流程是这样的：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#75715e># 1. 创建项目</span>
+</span></span><span style=display:flex><span>cargo new my-service
+</span></span><span style=display:flex><span>cd my-service
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 2. 添加依赖</span>
+</span></span><span style=display:flex><span>cargo add tokio --features full
+</span></span><span style=display:flex><span>cargo add serde --features derive
+</span></span><span style=display:flex><span>cargo add anyhow
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 3. 开发阶段：边写边检查（不生成二进制，最快）</span>
+</span></span><span style=display:flex><span>cargo check
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 4. 运行看效果</span>
+</span></span><span style=display:flex><span>cargo run
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 5. 跑测试</span>
+</span></span><span style=display:flex><span>cargo test
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 6. 提交前整理</span>
+</span></span><span style=display:flex><span>cargo fmt
+</span></span><span style=display:flex><span>cargo clippy
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e># 7. 发布构建</span>
+</span></span><span style=display:flex><span>cargo build --release
+</span></span></code></pre></div><p>这套流程配合编辑器的 <code>rust-analyzer</code> 插件（VSCode、Neovim、IntelliJ 都支持），开发体验相当顺畅。<code>rust-analyzer</code> 会实时做类型检查、自动补全、inline 报错提示，基本上等价于一个实时运行的 <code>cargo check</code>。</p><h2 id=小结>小结
+<a class=header-anchor href=#%e5%b0%8f%e7%bb%93></a></h2><p>Rust 的工具链设计是它工程体验好的重要原因之一——官方统一维护，不用在生态里挑选，开箱即用。</p><p>几个关键点记住：</p><ul><li><code>rustup</code> 管理 Rust 版本，日常用 stable</li><li><code>cargo</code> 是核心，几乎所有操作都通过它完成</li><li><code>Cargo.toml</code> 是项目的配置中心，workspace 用来组织多包项目</li><li>模块系统用 <code>mod</code> 声明、<code>pub</code> 控制可见性、<code>use</code> 引入路径</li><li><code>cargo fmt</code> + <code>cargo clippy</code> 是提交代码前的标配</li></ul><p>下一篇开始进入语法，重点讲变量绑定、类型系统和模式匹配——这些是写 Rust 代码用得最多的基础。</p></div><footer class=post-footer><div class=post-tags><a href=/tags/rust>Rust
+</a><a href=/tags/cargo>Cargo
+</a><a href=/tags/%e5%b7%a5%e5%85%b7%e9%93%be>工具链</a></div><div class=addthis_inline_share_toolbox style=text-align:center></div><hr><div class=post-copyright><img src=/imgs/cc/cc.svg width=75 height=75 align=right alt=共享知识><ul><li class=post-copyright-title><strong>文章标题：</strong>
+02 | 工具链与项目结构：Rust 的工程基础</li><li class=post-copyright-author><strong>本文作者： </strong>红岩</li><li class=post-copyright-link><strong>本文链接：</strong>
+<a id=post-cr-link href=https://zanehy.github.io/blog/rust-02-toolchain/ title="02 | 工具链与项目结构：Rust 的工程基础">https://zanehy.github.io/blog/rust-02-toolchain/</a></li><li class=post-copyright-license><strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <i class="fab fa-fw fa-creative-commons"></i><a target=_blank href=https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh>BY-NC-SA</a> 许可协议。转载请注明出处！</li></ul></div><div class=post-nav><div class="post-nav-next post-nav-item"></div><div class="post-nav-prev post-nav-item"><a href=/blog/rust-01-why-rust/ rel=prev title="01 | 为什么是 Rust？它到底解决了什么问题">01 | 为什么是 Rust？它到底解决了什么问题
+<i class="fa fa-chevron-right"></i></a></div></div></footer></article></div></div></main><footer class=footer><div class=footer-inner><div class=copyright>&copy;
+<span itemprop=copyrightYear>2024 - 2026
+</span><span class=with-love><i class="fa fa-heart"></i>
+</span><span class=author itemprop=copyrightHolder>红岩</span></div><div class=powered-by>由 <a href=https://gohugo.io title=0.123.7 target=_blank>Hugo</a> & <a href=https://github.com/hugo-next/hugo-theme-next title=4.5.3 target=_blank>Hugo NexT.Gemini</a> 强力驱动</div></div></footer><script type=text/javascript src=https://cdn.staticfile.org/animejs/3.2.1/anime.min.js defer></script><script type=text/javascript src=https://cdn.staticfile.org/viewerjs/1.11.0/viewer.min.js defer></script><script class=next-config data-name=main type=application/json>{"bookmark":{"color":"#888","enable":true,"save":"manual"},"copybtn":true,"darkmode":true,"giscus":{"cfg":{"category":"Comments","categoryid":null,"emit":false,"inputposition":"top","mapping":"title","reactions":false,"repo":"username/repo-name","repoid":null,"theme":"preferred_color_scheme"},"js":"https://giscus.app/client.js"},"hostname":"https://zanehy.github.io/","i18n":{"ds_day":" 天前","ds_days":" 天 ","ds_hour":" 小时前","ds_hours":" 小时 ","ds_just":"刚刚","ds_min":" 分钟前","ds_mins":" 分钟","ds_month":" 个月前","ds_years":" 年 ","empty":"没有找到任何搜索结果：${query}","hits":"找到 ${hits} 个搜索结果","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","placeholder":"搜索..."},"lang":"zh-CN","lazyload":false,"localSearch":{"enable":true,"limit":1e3,"path":"/searchindexes.xml","preload":true,"topnperarticle":-1,"trigger":"auto","unescape":true},"motion":{"async":true,"enable":true,"transition":{"collheader":"fadeInLeft","postblock":"fadeIn","postbody":"fadeInDown","postheader":"fadeInDown","sidebar":"fadeInUp"}},"postmeta":{"comments":{"enable":true,"plugin":"waline"},"views":{"enable":true,"plugin":"busuanzi"}},"root":"/","scheme":"Gemini","sidebar":{"display":"post","offset":12,"padding":18,"position":"left","width":256},"vendor":{"plugins":"qiniu","router":"https://cdn.staticfile.org"},"version":"4.5.3","waline":{"cfg":{"emoji":false,"imguploader":false,"placeholder":"请文明发言哟 ヾ(≧▽≦*)o","reaction":true,"reactiontext":["点赞","踩一下","得意","不屑","尴尬","睡觉"],"reactiontitle":"你认为这篇文章怎么样？","requiredmeta":["nick","mail"],"serverurl":null,"sofa":"快来发表你的意见吧 (≧∀≦)ゞ","wordlimit":200},"css":{"alias":"waline","file":"dist/waline.css","name":"@waline/client","version":"2.13.0"},"js":{"alias":"waline","file":"dist/waline.js","name":"@waline/client","version":"2.13.0"}}}</script><script type=text/javascript src=/js/main.min.0b6f435ab2b781f04f78d578f42b492c126726d94b54a88d0af9aaf3c50c4457.js defer></script></body></html>

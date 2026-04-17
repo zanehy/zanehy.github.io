@@ -1,4 +1,16 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>为什么是 Rust？它到底解决了什么问题</title><url>/blog/rust-01-why-rust/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>系统编程</tag><tag>内存安全</tag></tags><content type="html"> 在学一门语言之前，先搞明白它为什么存在，比死记语法有用得多。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>02 | 工具链与项目结构：Rust 的工程基础</title><url>/blog/rust-02-toolchain/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>Cargo</tag><tag>工具链</tag></tags><content type="html"> 在正式写 Rust 代码之前，先把工具链搞清楚。工具用顺手了，后面的学习会省很多力气。
+Rust 的工具链设计得相当完整，安装好之后你会得到一整套开箱即用的工具：编译器、包管理器、格式化工具、代码检查工具——它们都来自官方，不需要到处找第三方替代品。
+rustup：管理 Rust 本身 rustup 是 Rust 的工具链管理器，类似 Python 的 pyenv 或 Node 的 nvm。它负责安装、更新和切换不同版本的 Rust。
+安装 Rust：
+curl --proto &amp;amp;#39;=https&amp;amp;#39; --tlsv1.2 -sSf https://sh.rustup.rs | sh 安装完成后，rustup 会在你的 PATH 里加入 ~/.cargo/bin，所有工具都放在这里。
+常用命令：
+# 更新到最新稳定版 rustup update # 查看当前版本 rustc --version cargo --version # 安装 nightly 版本（某些实验性特性需要） rustup install nightly # 为当前项目切换到 nightly rustup override set nightly # 查看已安装的工具链 rustup toolchain list 三个发布频道：
+stable：稳定版，每六周发布一次，生产环境用这个 beta：下一个 stable 的预览版 nightly：每日构建，包含最新的实验性特性，某些库（比如早期的 async trait）依赖它 绝大多数情况下用 stable 就够了。
+cargo：Rust 的核心工具 cargo 是 Rust 的构建系统和包管理器，它把编译、测试、依赖管理、发布全包了。和 Go 的 go 命令类似，但功能更丰富。
+创建项目：
+# 创建二进制项目（可执行程序） cargo new my-app # 创建库项目 cargo new my-lib --lib # 在已有目录里初始化 cargo init 新建项目后的目录结构：
+my-app/ ├── Cargo.toml # 项目配置文件（类似 package.json / go.mod） ├── Cargo.lock # 依赖锁定文件（自动生成） └── src/ └── main.rs # 程序入口 常用命令：
+# 编 …</content></entry><entry><title>01 | 为什么是 Rust？它到底解决了什么问题</title><url>/blog/rust-01-why-rust/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>系统编程</tag><tag>内存安全</tag></tags><content type="html"> 在学一门语言之前，先搞明白它为什么存在，比死记语法有用得多。
 Rust 不是凭空冒出来的。它的诞生，是软件行业几十年来一个没有被彻底解决的矛盾逼出来的。
 那个悬而未决的矛盾 写程序，从来都有两个方向可以走。
 第一条路：追求极致性能，自己管内存。
