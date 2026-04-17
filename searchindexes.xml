@@ -1,4 +1,20 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>番外 | 与 APISIX 对比：手写还是用成品？</title><url>/blog/openresty-bonus-apisix/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>APISIX</tag><tag>网关</tag><tag>选型</tag></tags><content type="html"> 走完这 30 篇，你已经能手写一个具备生产能力的 API 网关。但现实中，很多团队会选择直接用 APISIX，而不是从零开始写。这篇来聊清楚这两条路的区别，帮你做出合适的选择。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>为什么是 Rust？它到底解决了什么问题</title><url>/blog/rust-01-why-rust/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>系统编程</tag><tag>内存安全</tag></tags><content type="html"> 在学一门语言之前，先搞明白它为什么存在，比死记语法有用得多。
+Rust 不是凭空冒出来的。它的诞生，是软件行业几十年来一个没有被彻底解决的矛盾逼出来的。
+那个悬而未决的矛盾 写程序，从来都有两个方向可以走。
+第一条路：追求极致性能，自己管内存。
+C 和 C++ 走的就是这条路。你需要什么内存，自己 malloc，用完自己 free。操作系统把控制权完全交给你，没有任何额外开销，代码跑得飞快。Linux 内核、数据库引擎、浏览器的渲染器——这类软件都选这条路。
+但代价是什么？内存管理是出了名的容易出错：
+忘了 free，内存泄漏，程序越跑越慢，最终 OOM free 了之后还在用，悬空指针（use-after-free），直接崩溃，或者更糟，被攻击者利用 用了数组越界，栈溢出，缓冲区溢出——这类漏洞至今仍是安全漏洞的主要来源 微软曾统计过，其安全补丁里大约 70% 是内存安全相关的 bug。Google 的 Chrome 团队给出了类似的数字。这些 bug 不是因为工程师水平差，而是因为手动内存管理本身就是一件很难做对的事。
+第二条路：让运行时帮你管内存。
+Java、Go、Python 走的是这条路。有垃圾回收器（GC），你分配内存，GC 自动回收，不需要操心悬空指针，不会内存泄漏（通常）。
+代价也是明摆着的：
+GC 有暂停（Stop-the-World），哪怕是 Go 这种已经优化得很好的并发 GC，在某些场景下仍然会有延迟抖动 运行时本身有开销，内存占用更高 无法精细控制内存布局，某些底层需求做不到 所以这两条路，长期以来是一个二选一的问题：要性能，就手动管内存冒风险；要安全，就用 GC 付出代价。
+Rust 的答案 Rust 说：这两条路不是非此即彼，有第三种选择。
+Rust 的核心思路是：把内存管理的正确性放到编译期来保证。 不靠 GC，不靠程序员的自律，而是让编译器通过一套严格的规则，在你的代码进入运行时之前就拒绝掉所有可能的内存错误。
+这套规则的核心就是所有权系统（Ownership），我们后面会专门用几篇文章来讲它。但在这里，你只需要知道一个结论：
+Rust 的编译器能够在不引入 GC 的前提下，从静态分析层面保证内存安全。
+这意味着：
+没有悬空指针——编译器不允许你持有一个已经被释放的值的引用 没有数据竞争——编译器不允许多个线程同时读写同一块内存（在 …</content></entry><entry><title>番外 | 与 APISIX 对比：手写还是用成品？</title><url>/blog/openresty-bonus-apisix/</url><categories><category>OpenResty</category></categories><tags><tag>OpenResty</tag><tag>APISIX</tag><tag>网关</tag><tag>选型</tag></tags><content type="html"> 走完这 30 篇，你已经能手写一个具备生产能力的 API 网关。但现实中，很多团队会选择直接用 APISIX，而不是从零开始写。这篇来聊清楚这两条路的区别，帮你做出合适的选择。
 APISIX 是什么 APISIX 是 Apache 软件基金会的顶级项目，由 API7.ai 主导开发。它的底层正是 OpenResty——Nginx + LuaJIT。
 简单说：APISIX 是一个用 OpenResty 写好的、功能完整的 API 网关产品。你在这个系列里手写的路由、鉴权、限流、熔断、插件系统……APISIX 都已经实现好了，而且经过了大规模生产验证。
 APISIX 的技术特点：
