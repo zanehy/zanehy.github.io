@@ -1,4 +1,14 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>02 | 工具链与项目结构：Rust 的工程基础</title><url>/blog/rust-02-toolchain/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>Cargo</tag><tag>工具链</tag></tags><content type="html"> 在正式写 Rust 代码之前，先把工具链搞清楚。工具用顺手了，后面的学习会省很多力气。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>03 | 高频语法精讲（上）——变量、类型与控制流</title><url>/blog/rust-03-syntax-basics-1/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>变量</tag><tag>类型系统</tag><tag>模式匹配</tag></tags><content type="html"><![CDATA[  有了前两篇的认知框架和工具链基础，现在正式进入 Rust 的语法世界。
+这一篇不打算把所有语法过一遍——那样做没有意义，查文档比看文章快得多。这里重点讲那些用得最频繁、最容易和 Go/Python 产生认知冲突的部分。
+变量绑定：默认不可变 Rust 里声明变量用 let，但和 Go/Python 最大的不同是：变量默认是不可变的（immutable）。
+fn main() { let x = 5; x = 6; // 编译错误：cannot assign twice to immutable variable } 要让变量可变，需要显式加 mut：
+fn main() { let mut x = 5; x = 6; println!(&amp;#34;{}&amp;#34;, x); // 6 } 这个设计是刻意的。Rust 鼓励你默认写不可变变量，需要改变时再加 mut——这样一眼就能看出哪些变量会被修改，代码意图更清晰，也减少了意外修改的风险。
+和 Go 对比：Go 里 var x int = 5 默认可变，想不可变要用常量 const。Rust 反过来，默认不可变，想可变加 mut。
+和 Python 对比：Python 里变量随时可以重新绑定，没有&amp;quot;不可变变量&amp;quot;的概念。Rust 的不可变是绑定层面的——这个名字绑定的值不能变。
+Shadowing：同名重新绑定 Rust 允许用同名的 let 遮蔽（shadow）之前的变量：
+fn main() { let x = 5; let x = x + 1; // shadowing：新的 x 遮蔽了旧的 x let x = x * 2; println!(&amp;#34;{}&amp;#34;, x); // 12 } shadowing 和 mut 的关键区别是：shadowing 允许改变类型，而 mut 不允许。
+fn main() { let spaces = &amp;#34; &amp;#34;; // &amp;amp;str 类型 let spaces = spaces.len(); // usize 类型，类型变了！ println!(&amp;#34;{}&amp;#34;, spaces); // 3 } 如果用 mut 尝试改变类型：
+let mut spaces = &amp;#34; &amp;#34;; spaces = spaces.len(); …  ]]></content></entry><entry><title>02 | 工具链与项目结构：Rust 的工程基础</title><url>/blog/rust-02-toolchain/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>Cargo</tag><tag>工具链</tag></tags><content type="html"> 在正式写 Rust 代码之前，先把工具链搞清楚。工具用顺手了，后面的学习会省很多力气。
 Rust 的工具链设计得相当完整，安装好之后你会得到一整套开箱即用的工具：编译器、包管理器、格式化工具、代码检查工具——它们都来自官方，不需要到处找第三方替代品。
 rustup：管理 Rust 本身 rustup 是 Rust 的工具链管理器，类似 Python 的 pyenv 或 Node 的 nvm。它负责安装、更新和切换不同版本的 Rust。
 安装 Rust：
