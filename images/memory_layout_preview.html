@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>body{margin:0;background:#0f1117;display:flex;justify-content:center;align-items:center;min-height:100vh;font-family:'Segoe UI',sans-serif;}</style>
+</head>
+<body>
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="380" viewBox="0 0 800 380">
+  <defs>
+    <linearGradient id="stackGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a3a5c;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0d2137;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="heapGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a4a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0d2618;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="fieldGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#1e3a5f;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#162d4a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="charGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a5c38;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0d3320;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-color="#000" flood-opacity="0.4"/>
+    </filter>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <marker id="arrowRed" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+      <polygon points="0 0, 10 3.5, 0 7" fill="#ff6b6b"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="380" fill="#0f1117" rx="0"/>
+
+  <!-- Title -->
+  <text x="400" y="40" text-anchor="middle" font-family="'Segoe UI',sans-serif" font-size="18" font-weight="600" fill="#e2e8f0" letter-spacing="0.5">String::from("hello") — 内存布局</text>
+  <line x1="120" y1="52" x2="680" y2="52" stroke="#2d3748" stroke-width="1"/>
+
+  <!-- ===== STACK PANEL ===== -->
+  <rect x="60" y="70" width="300" height="270" rx="14" fill="url(#stackGrad)" filter="url(#shadow)" stroke="#2b6cb0" stroke-width="1.5"/>
+  <!-- Stack header -->
+  <rect x="60" y="70" width="300" height="42" rx="14" fill="#2b6cb0"/>
+  <rect x="60" y="98" width="300" height="14" fill="#2b6cb0"/>
+  <text x="210" y="97" text-anchor="middle" font-family="'Segoe UI',sans-serif" font-size="14" font-weight="700" fill="white" letter-spacing="1">STACK</text>
+
+  <!-- Variable label -->
+  <text x="85" y="138" font-family="'Courier New',monospace" font-size="13" fill="#63b3ed">let s =</text>
+
+  <!-- Field: ptr -->
+  <rect x="82" y="148" width="256" height="54" rx="8" fill="url(#fieldGrad)" stroke="#4299e1" stroke-width="1"/>
+  <text x="102" y="169" font-family="'Courier New',monospace" font-size="12" fill="#90cdf4">ptr</text>
+  <rect x="148" y="154" width="1" height="42" fill="#2d3748"/>
+  <text x="165" y="169" font-family="'Courier New',monospace" font-size="11" fill="#fc8181">0x7fff_a3c2...</text>
+  <text x="102" y="190" font-family="'Segoe UI',sans-serif" font-size="10" fill="#4a6fa5">指向堆上的实际数据</text>
+
+  <!-- Field: len -->
+  <rect x="82" y="210" width="256" height="54" rx="8" fill="url(#fieldGrad)" stroke="#4299e1" stroke-width="1"/>
+  <text x="102" y="231" font-family="'Courier New',monospace" font-size="12" fill="#90cdf4">len</text>
+  <rect x="148" y="216" width="1" height="42" fill="#2d3748"/>
+  <text x="165" y="231" font-family="'Courier New',monospace" font-size="16" font-weight="bold" fill="#f6e05e">5</text>
+  <text x="102" y="252" font-family="'Segoe UI',sans-serif" font-size="10" fill="#4a6fa5">当前存储的字节数</text>
+
+  <!-- Field: cap -->
+  <rect x="82" y="272" width="256" height="54" rx="8" fill="url(#fieldGrad)" stroke="#4299e1" stroke-width="1"/>
+  <text x="102" y="293" font-family="'Courier New',monospace" font-size="12" fill="#90cdf4">cap</text>
+  <rect x="148" y="278" width="1" height="42" fill="#2d3748"/>
+  <text x="165" y="293" font-family="'Courier New',monospace" font-size="16" font-weight="bold" fill="#f6e05e">5</text>
+  <text x="102" y="314" font-family="'Segoe UI',sans-serif" font-size="10" fill="#4a6fa5">已分配的总容量</text>
+
+  <!-- ===== ARROW ===== -->
+  <path d="M 340 175 C 390 175, 390 210, 438 210" stroke="#ff6b6b" stroke-width="2.5" fill="none" marker-end="url(#arrowRed)" filter="url(#glow)"/>
+  <text x="370" y="168" font-family="'Segoe UI',sans-serif" font-size="10" fill="#fc8181">ptr 指向</text>
+
+  <!-- ===== HEAP PANEL ===== -->
+  <rect x="440" y="70" width="300" height="270" rx="14" fill="url(#heapGrad)" filter="url(#shadow)" stroke="#2f855a" stroke-width="1.5"/>
+  <!-- Heap header -->
+  <rect x="440" y="70" width="300" height="42" rx="14" fill="#2f855a"/>
+  <rect x="440" y="98" width="300" height="14" fill="#2f855a"/>
+  <text x="590" y="97" text-anchor="middle" font-family="'Segoe UI',sans-serif" font-size="14" font-weight="700" fill="white" letter-spacing="1">HEAP</text>
+
+  <!-- Address label -->
+  <text x="460" y="136" font-family="'Courier New',monospace" font-size="10" fill="#48bb78">0x7fff_a3c2...  (5 bytes)</text>
+
+  <!-- Byte cells -->
+  <rect x="458" y="148" width="52" height="70" rx="8" fill="url(#charGrad)" stroke="#38a169" stroke-width="1.5"/>
+  <text x="484" y="178" text-anchor="middle" font-family="'Courier New',monospace" font-size="26" font-weight="bold" fill="#9ae6b4">h</text>
+  <text x="484" y="207" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#276749">0x68</text>
+
+  <rect x="518" y="148" width="52" height="70" rx="8" fill="url(#charGrad)" stroke="#38a169" stroke-width="1.5"/>
+  <text x="544" y="178" text-anchor="middle" font-family="'Courier New',monospace" font-size="26" font-weight="bold" fill="#9ae6b4">e</text>
+  <text x="544" y="207" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#276749">0x65</text>
+
+  <rect x="578" y="148" width="52" height="70" rx="8" fill="url(#charGrad)" stroke="#38a169" stroke-width="1.5"/>
+  <text x="604" y="178" text-anchor="middle" font-family="'Courier New',monospace" font-size="26" font-weight="bold" fill="#9ae6b4">l</text>
+  <text x="604" y="207" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#276749">0x6c</text>
+
+  <rect x="638" y="148" width="52" height="70" rx="8" fill="url(#charGrad)" stroke="#38a169" stroke-width="1.5"/>
+  <text x="664" y="178" text-anchor="middle" font-family="'Courier New',monospace" font-size="26" font-weight="bold" fill="#9ae6b4">l</text>
+  <text x="664" y="207" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#276749">0x6c</text>
+
+  <rect x="698" y="148" width="52" height="70" rx="8" fill="url(#charGrad)" stroke="#38a169" stroke-width="1.5"/>
+  <text x="724" y="178" text-anchor="middle" font-family="'Courier New',monospace" font-size="26" font-weight="bold" fill="#9ae6b4">o</text>
+  <text x="724" y="207" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#276749">0x6f</text>
+
+  <!-- Index labels -->
+  <text x="484" y="235" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#4a6fa5">[0]</text>
+  <text x="544" y="235" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#4a6fa5">[1]</text>
+  <text x="604" y="235" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#4a6fa5">[2]</text>
+  <text x="664" y="235" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#4a6fa5">[3]</text>
+  <text x="724" y="235" text-anchor="middle" font-family="'Courier New',monospace" font-size="10" fill="#4a6fa5">[4]</text>
+
+  <!-- Heap notes -->
+  <text x="590" y="268" text-anchor="middle" font-family="'Segoe UI',sans-serif" font-size="11" fill="#48bb78">由 Rust 运行时向 OS 申请</text>
+  <text x="590" y="288" text-anchor="middle" font-family="'Segoe UI',sans-serif" font-size="11" fill="#48bb78">s 离开作用域 → 自动释放</text>
+  <rect x="460" y="297" width="260" height="28" rx="6" fill="#1a4a2e" stroke="#2f855a" stroke-width="1"/>
+  <text x="590" y="316" text-anchor="middle" font-family="'Courier New',monospace" font-size="11" fill="#68d391">drop(s)  →  free(0x7fff_a3c2...)</text>
+
+  <!-- Footer note -->
+  <text x="400" y="358" text-anchor="middle" font-family="'Segoe UI',sans-serif" font-size="11" fill="#4a5568">栈上只存"控制信息"（3 个字段共 24 字节），堆上才是真正的字符数据</text>
+</svg>
+</body>
+</html>

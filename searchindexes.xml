@@ -1,4 +1,12 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>05 | 所有权——Rust 最重要的概念</title><url>/blog/rust-05-ownership/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>所有权</tag><tag>内存管理</tag><tag>Move语义</tag></tags><content type="html"><![CDATA[  如果你用 Go 或 Python 写过代码，大概从来没想过一个问题：这段数据，到底谁负责把它从内存里删掉？
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>06 | 借用与引用——不转移所有权，也能用你的数据</title><url>/blog/rust-06-borrowing/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>借用</tag><tag>引用</tag><tag>借用检查器</tag></tags><content type="html"><![CDATA[  上一篇讲到一个尴尬的问题：把值传给函数，所有权就转移了，函数用完你就再也拿不回来了。
+fn print_length(s: String) { println!(&amp;#34;长度是：{}&amp;#34;, s.len()); } // s 在这里被 drop fn main() { let name = String::from(&amp;#34;Alice&amp;#34;); print_length(name); // println!(&amp;#34;{}&amp;#34;, name); // 编译错误！name 已经没了 } 为了&amp;quot;打印一下长度&amp;quot;就把数据永久交出去，这显然不合理。实际写代码时，大多数情况我们只是想让函数&amp;quot;看一眼&amp;quot;数据，并不想转移所有权。
+Rust 为此提供了借用（Borrowing）机制——通过引用（Reference），让别人使用你的数据，但所有权还在你这里。
+图书馆借书：引用的直觉模型 想象你有一本书，朋友想看。
+有两种方式：
+把书送给朋友（Move）——书就不是你的了 借给朋友看（引用）——你还是书的主人，朋友看完还你 引用就是第二种方式。你把数据&amp;quot;借&amp;quot;给别人用，借的人用完了，数据还在你这里。
+Rust 里，引用用 &amp;amp; 符号表示：
+fn print_length(s: &amp;amp;String) { // 接收引用，不拿走所有权 println!(&amp;#34;长度是：{}&amp;#34;, s.len()); } fn main() { let name = String::from(&amp;#34;Alice&amp;#34;); print_length(&amp;amp;name); // 传引用，&amp;amp;name 就是&amp;#34;把 name 借出去&amp;#34; println!(&amp;#34;name 还在：{}&amp;#34;, name); // 没问题，所有权从没离开过 } &amp;amp;name 的意思是：创建一个指向 name 的引用，而不是转移 name 本身。
+引用在内存里长什么样 name 变量（栈）： ┌─────────────────────────┐ │ ptr ───────────────────┼──→ 堆：&amp;#34;Alice&amp;#34; │ len: 5 │ │ cap: 5 │ …  ]]></content></entry><entry><title>05 | 所有权——Rust 最重要的概念</title><url>/blog/rust-05-ownership/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>所有权</tag><tag>内存管理</tag><tag>Move语义</tag></tags><content type="html"><![CDATA[  如果你用 Go 或 Python 写过代码，大概从来没想过一个问题：这段数据，到底谁负责把它从内存里删掉？
 在 Go 里，你 new 一个对象，用完了不管，GC 会帮你清。在 Python 里更是如此，变量一多，引用计数器自动追踪，没人用了就回收。这套机制很舒服，但代价是你对内存的生命周期几乎没有控制权，而且 GC 随时可能暂停程序做垃圾回收（Stop-The-World），高性能场景下是个大麻烦。
 Rust 的答案是：既不让你手动 free，也不搞 GC，而是在编译期就把内存的生命周期推断清楚。这套机制叫做所有权（Ownership）。
 理解所有权，是从&amp;quot;会写 Go/Python&amp;quot;到&amp;quot;会写 Rust&amp;quot;的关键一跳。
