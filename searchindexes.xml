@@ -1,4 +1,15 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>04 | 高频语法精讲（下）——集合、字符串与错误速通</title><url>/blog/rust-04-syntax-basics-2/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>集合</tag><tag>字符串</tag><tag>错误处理</tag></tags><content type="html"><![CDATA[  上一篇把变量、类型和控制流讲完了。这一篇继续扫尾——把日常开发里用得最多的五个&amp;quot;基础设施&amp;quot;过一遍：两个集合类型、字符串的基本认知、以及错误处理的入门写法。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>05 | 所有权——Rust 最重要的概念</title><url>/blog/rust-05-ownership/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>所有权</tag><tag>内存管理</tag><tag>Move语义</tag></tags><content type="html"><![CDATA[  如果你用 Go 或 Python 写过代码，大概从来没想过一个问题：这段数据，到底谁负责把它从内存里删掉？
+在 Go 里，你 new 一个对象，用完了不管，GC 会帮你清。在 Python 里更是如此，变量一多，引用计数器自动追踪，没人用了就回收。这套机制很舒服，但代价是你对内存的生命周期几乎没有控制权，而且 GC 随时可能暂停程序做垃圾回收（Stop-The-World），高性能场景下是个大麻烦。
+Rust 的答案是：既不让你手动 free，也不搞 GC，而是在编译期就把内存的生命周期推断清楚。这套机制叫做所有权（Ownership）。
+理解所有权，是从&amp;quot;会写 Go/Python&amp;quot;到&amp;quot;会写 Rust&amp;quot;的关键一跳。
+一套房子只能有一个产权人 在讲代码之前，先建立一个直觉。
+假设你有一套房子，这套房子有一本产权证。产权证上只能登记一个人的名字——这个人就是这套房子的所有者（Owner）。
+产权人可以住在这套房子里（使用这块内存） 产权人可以把房子转让给别人（Move，所有权转移） 产权人搬走、消失时，这套房子就会被收回（内存释放） 同一时刻，不能有两个人都拿着这套房子的产权证——否则都消失时，房子会被收回两次（double-free，程序崩溃） 这就是 Rust 所有权的核心逻辑。
+从内存问题出发：GC 解决了什么，又带来了什么 写 Go 时你可能遇到过这种情况：
+// Go 代码 func newUser() *User { u := &amp;amp;User{Name: &amp;#34;Alice&amp;#34;} return u // 返回局部变量的指针，Go 的 GC 会保证它活着 } 这在 Go 里完全没问题。GC 在后台追踪所有对象，只要还有人引用它，就不释放。
+但 GC 有两个代价：
+Stop-The-World（STW）停顿：GC 运行时需要暂停程序，哪怕只是几毫秒，对实时性要求高的系统（游戏引擎、交易系统）也不能接受。 无法精确控制释放时机：你无法保证一个资源（比如数据库连接、文件句柄）在某个精确的时刻被释放，只能用 defer 或 context 来模拟。 C/C++ 让程序员手动 malloc/free，没有 GC 停顿，但极容易出错：
+use-after-free：内存释放后继续用， …  ]]></content></entry><entry><title>04 | 高频语法精讲（下）——集合、字符串与错误速通</title><url>/blog/rust-04-syntax-basics-2/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>集合</tag><tag>字符串</tag><tag>错误处理</tag></tags><content type="html"><![CDATA[  上一篇把变量、类型和控制流讲完了。这一篇继续扫尾——把日常开发里用得最多的五个&amp;quot;基础设施&amp;quot;过一遍：两个集合类型、字符串的基本认知、以及错误处理的入门写法。
 这些内容本身不复杂，但每一个都有值得单独说清楚的地方。
 Vec：Rust 的动态数组 Vec&amp;lt;T&amp;gt; 是 Rust 里最常用的集合，对应 Go 的 slice、Python 的 list。
 fn main() { // 创建 let mut v: Vec&amp;lt;i32&amp;gt; = Vec::new(); let v2 = vec![1, 2, 3]; // 宏语法，更常用 // 添加元素 v.push(10); v.push(20); v.push(30); // 访问：两种方式 let first = v[0]; // 越界会 panic let second = v.get(1); // 返回 Option&amp;lt;&amp;amp;i32&amp;gt;，更安全 // 遍历 for item in &amp;amp;v { println!(&amp;#34;{}&amp;#34;, item); } // 遍历并修改 for item in &amp;amp;mut v { *item *= 2; } println!(&amp;#34;{:?}&amp;#34;, v); // [20, 40, 60] } 几个常用操作：
