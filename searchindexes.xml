@@ -1,4 +1,13 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>07 | 生命周期——引用的有效期限</title><url>/blog/rust-07-lifetime/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>生命周期</tag><tag>引用</tag><tag>借用检查器</tag></tags><content type="html"><![CDATA[  上一篇我们学了借用与引用，知道 &amp;amp;T 可以让你&amp;quot;看&amp;quot;数据而不转移所有权。但有个问题留着没讲：
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>08 | 智能指针——当引用不够用时</title><url>/blog/rust-08-smart-pointers/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>智能指针</tag><tag>Box</tag><tag>Rc</tag><tag>Arc</tag><tag>RefCell</tag></tags><content type="html"><![CDATA[  前两篇，我们深入理解了借用和生命周期。Rust 的引用机制很强大，但有一个根本限制：引用不拥有数据。
+当你需要在多个地方共享同一份数据的所有权，或者需要在堆上存储数据而不想手动管理内存时，普通引用就不够用了。这时候，智能指针登场。
+什么是智能指针 先说普通指针。在 C/C++ 里，指针就是一个数字，存着内存地址，没有任何附加功能，忘记释放就内存泄漏，多次释放就崩溃。
+智能指针在指针的基础上，附加了&amp;quot;智能&amp;quot;——通过实现 Drop trait 在离开作用域时自动清理，通过实现 Deref trait 让你像使用引用一样使用它。
+在 Rust 中，String 和 Vec&amp;lt;T&amp;gt; 本质上都是智能指针。本篇重点讲四个核心类型：Box&amp;lt;T&amp;gt;、Rc&amp;lt;T&amp;gt;、Arc&amp;lt;T&amp;gt;、RefCell&amp;lt;T&amp;gt;。
+Box&amp;lt;T&amp;gt;：最简单的堆分配 基本用法 fn main() { let b = Box::new(5); println!(&amp;#34;b = {}&amp;#34;, b); // 像普通变量一样使用 } // b 离开作用域，堆内存自动释放 Box&amp;lt;T&amp;gt; 把数据放在堆上，自身（一个指针）存在栈上。当 Box 离开作用域，堆上的数据也被释放。
+使用场景一：递归类型 Rust 在编译期需要知道每个类型的大小。递归类型（自引用）会导致大小无法确定：
+// 编译错误：recursive type has infinite size enum List { Cons(i32, List), Nil, } 用 Box 包一层，把&amp;quot;未知大小&amp;quot;变成&amp;quot;指针大小&amp;quot;（固定 8 字节）：
+enum List { Cons(i32, Box&amp;lt;List&amp;gt;), Nil, } fn main() { let list = List::Cons(1, Box::new(List::Cons(2, Box::new(List::Cons(3, Box::new(List::Nil)))))); } 使用场景二：Trait 对象 当你需要存储实现了某个 trait 的不同类型时：
+trait Animal { fn speak(&amp;amp;self); } struct Dog; …  ]]></content></entry><entry><title>07 | 生命周期——引用的有效期限</title><url>/blog/rust-07-lifetime/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>生命周期</tag><tag>引用</tag><tag>借用检查器</tag></tags><content type="html"><![CDATA[  上一篇我们学了借用与引用，知道 &amp;amp;T 可以让你&amp;quot;看&amp;quot;数据而不转移所有权。但有个问题留着没讲：
 引用到底能用多久？
 如果数据已经被释放，但引用还指向那块地址，会发生什么？Rust 是怎么在编译期发现这个问题的？
 这就是**生命周期（Lifetime）**要解决的事。
