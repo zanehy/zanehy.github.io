@@ -1,4 +1,18 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>06 | 借用与引用——不转移所有权，也能用你的数据</title><url>/blog/rust-06-borrowing/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>借用</tag><tag>引用</tag><tag>借用检查器</tag></tags><content type="html"><![CDATA[  上一篇讲到一个尴尬的问题：把值传给函数，所有权就转移了，函数用完你就再也拿不回来了。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>07 | 生命周期——引用的有效期限</title><url>/blog/rust-07-lifetime/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>生命周期</tag><tag>引用</tag><tag>借用检查器</tag></tags><content type="html"><![CDATA[  上一篇我们学了借用与引用，知道 &amp;amp;T 可以让你&amp;quot;看&amp;quot;数据而不转移所有权。但有个问题留着没讲：
+引用到底能用多久？
+如果数据已经被释放，但引用还指向那块地址，会发生什么？Rust 是怎么在编译期发现这个问题的？
+这就是**生命周期（Lifetime）**要解决的事。
+生命周期是 Rust 里最让初学者头疼的概念，主要原因是语法看起来很陌生：&#39;a、&#39;b、&#39;static……像某种暗语。但它的核心思想其实很朴素，类比一下就清楚了。
+租约类比：引用就是一份有期限的借据 你向朋友借一本书，写了一张借据：&amp;ldquo;我借了这本书，2025年底还。&amp;rdquo;
+这张借据有一个有效期。如果你的朋友在2025年底之前把书卖掉了，你的借据就失效了——书不存在了，借据还指向那本书，是没有意义的。
+Rust 的引用和生命周期，就是这套逻辑：
+数据（书）有它自己的生命周期——它在内存里存活的时间段 引用（借据）也有一个有效期 规则：引用的有效期不能超过它所指向的数据的生命周期 编译器的借用检查器，就是在帮你检查&amp;quot;借据是否会比书活得更久&amp;quot;。
+悬空引用：借据还在，书已消失 最直接的例子，C/C++ 里的经典 bug：
+// C 代码（危险！） int* get_number() { int x = 42; // x 在栈上 return &amp;amp;x; // 返回 x 的地址 } // 函数返回，x 被销毁——地址指向垃圾数据 int main() { int* p = get_number(); printf(&amp;#34;%d\n&amp;#34;, *p); // 未定义行为，可能崩溃 } 用借据类比：书已经烧掉了，你还拿着借据去找书，找到的是灰烬。
+Rust 在编译期就拒绝了这种写法：
+fn get_number() -&amp;gt; &amp;amp;i32 { // 编译错误！ let x = 42; &amp;amp;x // 想返回 x 的引用 } // x 在这里被 drop，引用将指向无效内存 编译器报错：returns a reference to data owned by the current function
+修复很简单——把值本身返回出去，而不是引用：
+fn get_number() -&amp;gt; i32 { // 返回值，转移所有权 let x = …  ]]></content></entry><entry><title>06 | 借用与引用——不转移所有权，也能用你的数据</title><url>/blog/rust-06-borrowing/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>借用</tag><tag>引用</tag><tag>借用检查器</tag></tags><content type="html"><![CDATA[  上一篇讲到一个尴尬的问题：把值传给函数，所有权就转移了，函数用完你就再也拿不回来了。
 fn print_length(s: String) { println!(&amp;#34;长度是：{}&amp;#34;, s.len()); } // s 在这里被 drop fn main() { let name = String::from(&amp;#34;Alice&amp;#34;); print_length(name); // println!(&amp;#34;{}&amp;#34;, name); // 编译错误！name 已经没了 } 为了&amp;quot;打印一下长度&amp;quot;就把数据永久交出去，这显然不合理。实际写代码时，大多数情况我们只是想让函数&amp;quot;看一眼&amp;quot;数据，并不想转移所有权。
 Rust 为此提供了借用（Borrowing）机制——通过引用（Reference），让别人使用你的数据，但所有权还在你这里。
 图书馆借书：引用的直觉模型 想象你有一本书，朋友想看。
