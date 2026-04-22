@@ -1,4 +1,13 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>08 | 智能指针——当引用不够用时</title><url>/blog/rust-08-smart-pointers/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>智能指针</tag><tag>Box</tag><tag>Rc</tag><tag>Arc</tag><tag>RefCell</tag></tags><content type="html"><![CDATA[  前两篇，我们深入理解了借用和生命周期。Rust 的引用机制很强大，但有一个根本限制：引用不拥有数据。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>09 | Trait——Rust 的接口</title><url>/blog/rust-09-traits/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>Trait</tag><tag>接口</tag><tag>动态分发</tag><tag>泛型</tag></tags><content type="html"><![CDATA[  前一篇讲智能指针，我们见识了 Box&amp;lt;T&amp;gt;、Rc&amp;lt;T&amp;gt;、Arc&amp;lt;T&amp;gt; 等工具，它们的核心作用是管理数据的所有权与生命周期。但如果问&amp;quot;这些类型的行为如何定义&amp;quot;，答案指向的是本篇主角——Trait。
+Trait 是 Rust 的接口机制，也是整个类型系统的黏合剂。理解 Trait，是从&amp;quot;能写 Rust&amp;quot;到&amp;quot;写好 Rust&amp;quot;的关键一步。
+从一个问题开始 假设你要写一个函数，给不同的图形计算面积：圆形、矩形、三角形。在 Go 里，你会定义一个 interface；在 Python 里，你会用 duck typing；在 Rust 里，你需要 Trait。
+先看 Trait 的基本语法，再和 Go/Python 做对比，最后深入几个关键细节。
+定义 Trait Trait 的定义很像其他语言的接口，用 trait 关键字：
+trait Area { fn area(&amp;amp;self) -&amp;gt; f64; } 这定义了一个 Area Trait，任何实现了它的类型都必须提供 area 方法。
+接下来为具体类型实现 Trait：
+struct Circle { radius: f64, } struct Rectangle { width: f64, height: f64, } impl Area for Circle { fn area(&amp;amp;self) -&amp;gt; f64 { std::f64::consts::PI * self.radius * self.radius } } impl Area for Rectangle { fn area(&amp;amp;self) -&amp;gt; f64 { self.width * self.height } } 语法是 impl TraitName for TypeName，清晰明了。
+默认方法 Trait 可以提供默认实现，不强制每个类型都覆盖：
+trait Describe { fn name(&amp;amp;self) -&amp;gt; String; fn describe(&amp;amp;self) -&amp;gt; String { format!(&amp;#34;我是 {}&amp;#34;, self.name()) } } struct Dog; …  ]]></content></entry><entry><title>08 | 智能指针——当引用不够用时</title><url>/blog/rust-08-smart-pointers/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>智能指针</tag><tag>Box</tag><tag>Rc</tag><tag>Arc</tag><tag>RefCell</tag></tags><content type="html"><![CDATA[  前两篇，我们深入理解了借用和生命周期。Rust 的引用机制很强大，但有一个根本限制：引用不拥有数据。
 当你需要在多个地方共享同一份数据的所有权，或者需要在堆上存储数据而不想手动管理内存时，普通引用就不够用了。这时候，智能指针登场。
 什么是智能指针 先说普通指针。在 C/C++ 里，指针就是一个数字，存着内存地址，没有任何附加功能，忘记释放就内存泄漏，多次释放就崩溃。
 智能指针在指针的基础上，附加了&amp;quot;智能&amp;quot;——通过实现 Drop trait 在离开作用域时自动清理，通过实现 Deref trait 让你像使用引用一样使用它。
