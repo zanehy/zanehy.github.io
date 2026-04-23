@@ -1,4 +1,12 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>11 | Iterator——最值得深入的 Trait</title><url>/blog/rust-11-iterator/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>Iterator</tag><tag>迭代器</tag><tag>函数式编程</tag><tag>零成本抽象</tag></tags><content type="html"><![CDATA[  你可能写过这样的代码：遍历一个列表，过滤掉不符合条件的，对剩下的做个变换，最后求和。在 Python 里，这是一行 list comprehension；在 Go 里，这是三个嵌套的 for 循环。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>12 | 错误处理体系</title><url>/blog/rust-12-error-handling/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>错误处理</tag><tag>Result</tag><tag>thiserror</tag><tag>anyhow</tag></tags><content type="html"><![CDATA[  每门语言都有自己处理错误的哲学。Python 和 Java 用异常——出错时向上抛，谁想处理谁 catch，不想处理就继续往上冒。Go 用多返回值——每个函数都返回 (result, error)，调用方强制检查。
+Rust 的答案更彻底：错误是类型，必须被处理，不能被忽视。编译器会在你忽略错误时发出警告，在你错误地传播时拒绝编译。
+这带来了一个结果：Rust 程序很少有&amp;quot;运行时突然崩溃&amp;quot;的意外——因为大多数错误在编译期就被逼着处理掉了。
+两类错误：panic 和 Result Rust 把错误分成两类，处理方式截然不同。
+不可恢复错误：panic! panic! 代表&amp;quot;程序遇到了不应该发生的事&amp;quot;，立即终止当前线程，打印错误信息和调用栈。
+fn main() { let v = vec![1, 2, 3]; println!(&amp;#34;{}&amp;#34;, v[10]); // panic: index out of bounds } 什么时候该用 panic？
+测试代码：unwrap()、expect() 在测试里完全合理 原型和脚本：先让代码跑起来，后面再处理错误 违反不变式：调用方传入了不合法的参数（程序员的错误，不是用户的错误） 确实无法继续：比如启动时配置文件格式完全错误 什么时候不该用 panic？
+库代码：永远不要在库里 panic，把错误返回给调用方 可预期的失败：网络超时、文件不存在、用户输入非法——这些都是正常情况，用 Result // 坏的写法——库函数里 panic fn parse_config(s: &amp;amp;str) -&amp;gt; Config { serde_json::from_str(s).unwrap() // 调用方无法处理这个 panic } // 好的写法——返回 Result fn parse_config(s: &amp;amp;str) -&amp;gt; Result&amp;lt;Config, serde_json::Error&amp;gt; { serde_json::from_str(s) } Result：把错误变成类型 Result&amp;lt;T, E&amp;gt; 是 Rust 错误处理的核心：
+enum Result&amp;lt;T, E&amp;gt; { Ok(T), // 成功，携带结果值 Err(E), // …  ]]></content></entry><entry><title>11 | Iterator——最值得深入的 Trait</title><url>/blog/rust-11-iterator/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>Iterator</tag><tag>迭代器</tag><tag>函数式编程</tag><tag>零成本抽象</tag></tags><content type="html"><![CDATA[  你可能写过这样的代码：遍历一个列表，过滤掉不符合条件的，对剩下的做个变换，最后求和。在 Python 里，这是一行 list comprehension；在 Go 里，这是三个嵌套的 for 循环。
 Rust 的答案是迭代器——既不牺牲可读性，也不牺牲性能。这是 Rust 标准库里设计最精妙的 Trait 之一，值得专门深入。
 迭代器的本质：一个会&amp;quot;吐出&amp;quot;值的东西 Iterator Trait 的定义出奇地简单：
 pub trait Iterator { type Item; fn next(&amp;amp;mut self) -&amp;gt; Option&amp;lt;Self::Item&amp;gt;; // 其余几十个方法都有默认实现 } 只有一个必须实现的方法：next。调用一次，得到下一个值（Some）；没有更多值了，返回 None。就这么简单。
