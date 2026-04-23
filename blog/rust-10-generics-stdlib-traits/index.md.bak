@@ -1,0 +1,407 @@
+---
+title: "10 | 泛型与常用标准库 Trait"
+date: 2026-04-23T10:00:00+08:00
+lastmod: 2026-04-23T10:00:00+08:00
+series: ["Rust 学习系列"]
+seriesOrder: 10
+categories:
+  - Rust
+tags:
+  - Rust
+  - 泛型
+  - Trait
+  - 标准库
+draft: false
+---
+
+上一篇我们深入了 Trait 的定义、静态分发与动态分发。Trait 是行为的契约，而**泛型**是让这份契约在多种类型上复用的机制。这两者结合，构成了 Rust 类型系统最有表达力的部分。
+
+本篇先讲泛型的语法和性能含义，再系统梳理那些必须掌握的标准库 Trait——它们是写地道 Rust 代码的基础词汇。
+
+---
+
+## 泛型：写一次，适用多种类型
+
+泛型的核心思想很朴素：与其为每种类型写一遍相同的逻辑，不如用一个类型占位符，让编译器替你展开。
+
+### 泛型函数
+
+```rust
+// 不用泛型，要为每种类型写一遍
+fn largest_i32(list: &[i32]) -> &i32 {
+    let mut largest = &list[0];
+    for item in list {
+        if item > largest {
+            largest = item;
+        }
+    }
+    largest
+}
+
+// 用泛型，一个函数搞定——但要加 Trait Bound
+fn largest<T: PartialOrd>(list: &[T]) -> &T {
+    let mut largest = &list[0];
+    for item in list {
+        if item > largest {
+            largest = item;
+        }
+    }
+    largest
+}
+```
+
+`T: PartialOrd` 是 Trait Bound，告诉编译器：传入的 `T` 必须支持比较操作（`>`）。没有这个约束，编译器不知道 `item > largest` 是否合法。
+
+### 泛型结构体
+
+```rust
+struct Point<T> {
+    x: T,
+    y: T,
+}
+
+impl<T> Point<T> {
+    fn x(&self) -> &T {
+        &self.x
+    }
+}
+
+// 特化：只为 f64 实现某些方法
+impl Point<f64> {
+    fn distance_from_origin(&self) -> f64 {
+        (self.x * self.x + self.y * self.y).sqrt()
+    }
+}
+
+fn main() {
+    let p = Point { x: 3.0_f64, y: 4.0 };
+    println!("距原点距离：{}", p.distance_from_origin()); // 5.0
+}
+```
+
+### where 子句
+
+当 Trait Bound 很多时，把它们堆在尖括号里会让函数签名难以阅读，`where` 子句是更清晰的写法：
+
+```rust
+// 拥挤的写法
+fn process<T: Clone + std::fmt::Debug, U: Clone + std::fmt::Display>(a: T, b: U) {}
+
+// where 子句，更易读
+fn process<T, U>(a: T, b: U)
+where
+    T: Clone + std::fmt::Debug,
+    U: Clone + std::fmt::Display,
+{
+    println!("{:?}", a);
+    println!("{}", b);
+}
+```
+
+---
+
+## 单态化：为什么泛型是零成本的
+
+Rust 的泛型不是运行时的魔法，而是编译期的代码生成。编译器看到你的泛型代码，会为每一种实际用到的类型生成一份专属的函数。这个过程叫**单态化**（monomorphization）。
+
+```rust
+fn add<T: std::ops::Add<Output = T>>(a: T, b: T) -> T {
+    a + b
+}
+
+fn main() {
+    add(1_i32, 2);   // 编译器生成 add_i32
+    add(1.0_f64, 2.0); // 编译器生成 add_f64
+}
+```
+
+单态化的含义：
+
+- **性能**：没有运行时的类型分发，生成的代码和你手写两个函数完全一样快
+- **代价**：编译时间更长，二进制体积更大（每种类型一份代码）
+
+对大多数项目来说，这个代价完全值得。只有在同一泛型函数被几十上百种类型实例化时，才需要考虑是否改用 `dyn Trait`。
+
+---
+## 标准库 Trait：必须掌握的词汇表
+
+标准库里有几十个 Trait，但日常写 Rust 绕不开的就那么十几个。分两组讲：格式化与克隆，以及类型转换。
+
+### Display 和 Debug
+
+这两个 Trait 控制类型如何被打印。
+
+- `Debug`：用 `{:?}` 打印，面向开发者，几乎总是可以 `#[derive(Debug)]` 自动生成
+- `Display`：用 `{}` 打印，面向最终用户，需要手动实现
+
+```rust
+use std::fmt;
+
+struct Point {
+    x: f64,
+    y: f64,
+}
+
+// Debug 自动派生
+#[derive(Debug)]
+struct Color {
+    r: u8,
+    g: u8,
+    b: u8,
+}
+
+// Display 手动实现
+impl fmt::Display for Point {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "({}, {})", self.x, self.y)
+    }
+}
+
+fn main() {
+    let p = Point { x: 1.0, y: 2.0 };
+    println!("{}", p);   // (1, 2)  — Display
+
+    let c = Color { r: 255, g: 128, b: 0 };
+    println!("{:?}", c); // Color { r: 255, g: 128, b: 0 }  — Debug
+    println!("{:#?}", c); // 带缩进的 Debug
+}
+```
+
+经验法则：**自己的类型几乎都应该实现 `Debug`**，这样在开发调试时非常方便。是否实现 `Display` 取决于这个类型是否有"面向用户"的字符串表示。
+
+### Clone 和 Copy
+
+这两个 Trait 控制值被复制时的行为，是理解所有权的关键拼图。
+
+```rust
+// Clone：显式深拷贝，调用 .clone() 才复制
+#[derive(Debug, Clone)]
+struct Config {
+    host: String,
+    port: u16,
+}
+
+// Copy：隐式按位复制，赋值/传参时自动复制，不发生移动
+// 只能为"完全存在于栈上"的类型实现 Copy
+#[derive(Debug, Clone, Copy)]
+struct Point2D {
+    x: f32,
+    y: f32,
+}
+
+fn main() {
+    let p1 = Point2D { x: 1.0, y: 2.0 };
+    let p2 = p1;       // Copy：p1 和 p2 都可用
+    println!("{:?} {:?}", p1, p2);
+
+    let c1 = Config { host: "localhost".to_string(), port: 8080 };
+    let c2 = c1.clone(); // Clone：显式调用
+    // let c2 = c1;      // 这样写会移动，c1 不可再用
+    println!("{:?}", c2);
+}
+```
+
+**能实现 `Copy` 的条件**：类型的所有字段都实现了 `Copy`。`String`、`Vec`、任何持有堆数据的类型都不能实现 `Copy`，因为它们不能简单按位复制（会导致双重释放）。
+
+---
+### From 和 Into：类型转换的惯用写法
+
+在 Rust 里，类型转换不用 `(Type)value` 这种强制转型，而是用 `From`/`Into` Trait。
+
+```rust
+// From：定义"如何从另一种类型创建我"
+struct Celsius(f64);
+struct Fahrenheit(f64);
+
+impl From<Celsius> for Fahrenheit {
+    fn from(c: Celsius) -> Self {
+        Fahrenheit(c.0 * 9.0 / 5.0 + 32.0)
+    }
+}
+
+fn main() {
+    let boiling = Celsius(100.0);
+    
+    // 使用 From
+    let f = Fahrenheit::from(boiling);
+    println!("100°C = {:.1}°F", f.0); // 212.0°F
+
+    // Into 是自动实现的——实现了 From<A> for B，就自动有 A: Into<B>
+    let freezing = Celsius(0.0);
+    let f2: Fahrenheit = freezing.into();
+    println!("0°C = {:.1}°F", f2.0); // 32.0°F
+}
+```
+
+这里有个很优雅的设计：**实现了 `From<A> for B`，标准库会自动为 `A` 实现 `Into<B>`**。所以你只需要实现 `From`，`Into` 免费赠送。
+
+标准库里大量使用 `From`/`Into`：
+
+```rust
+// String 实现了 From<&str>
+let s: String = String::from("hello");
+let s2: String = "hello".into(); // 等价写法
+
+// i64 实现了 From<i32>
+let big: i64 = i64::from(42_i32);
+let big2: i64 = 42_i32.into();
+
+// 错误处理中也大量用到 From
+// ? 运算符内部就是调用 From 转换错误类型
+```
+
+---
+
+### Deref：让自定义类型像引用一样工作
+
+`Deref` Trait 定义了 `*` 运算符（解引用）的行为，也是 Rust **自动解引用**（Deref Coercion）的基础。
+
+```rust
+use std::ops::Deref;
+
+struct MyBox<T>(T);
+
+impl<T> Deref for MyBox<T> {
+    type Target = T;
+
+    fn deref(&self) -> &T {
+        &self.0
+    }
+}
+
+fn hello(name: &str) {
+    println!("Hello, {}!", name);
+}
+
+fn main() {
+    let s = MyBox(String::from("Rust"));
+    
+    // 自动解引用链：&MyBox<String> -> &String -> &str
+    hello(&s); // 编译器自动调用多次 deref，最终得到 &str
+}
+```
+
+这就是为什么 `Box<String>` 可以当 `&str` 用，`Vec<u8>` 可以当 `&[u8]` 用——它们都实现了 `Deref`，Rust 会在需要时自动沿着解引用链转换。
+
+实际工作中你很少需要手动实现 `Deref`，但理解它能解释很多"为什么这里传 `&Vec<T>` 可以当 `&[T]` 用"的疑惑。
+
+---
+
+### Drop：自定义析构行为
+
+`Drop` Trait 定义了值离开作用域时的清理逻辑，是 Rust RAII（资源获取即初始化）机制的实现基础。
+
+```rust
+struct DatabaseConnection {
+    url: String,
+}
+
+impl DatabaseConnection {
+    fn new(url: &str) -> Self {
+        println!("连接到：{}", url);
+        DatabaseConnection { url: url.to_string() }
+    }
+}
+
+impl Drop for DatabaseConnection {
+    fn drop(&mut self) {
+        println!("关闭连接：{}", self.url);
+        // 实际项目中这里会关闭 TCP 连接、释放资源等
+    }
+}
+
+fn main() {
+    let _conn = DatabaseConnection::new("postgres://localhost/mydb");
+    println!("使用连接中...");
+    // _conn 在这里离开作用域，自动调用 drop
+    // 输出：关闭连接：postgres://localhost/mydb
+}
+```
+
+几个要点：
+
+- 不能手动调用 `drop` 方法（会造成双重释放）
+- 如果需要提前释放，用 `std::mem::drop(value)` 函数（不是方法）
+- `Drop` 和 `Copy` 互斥——实现了 `Copy` 的类型不能实现 `Drop`
+
+---
+
+## 一个综合示例
+
+把上面的 Trait 串起来，写一个简单的缓存结构：
+
+```rust
+use std::fmt;
+
+#[derive(Debug, Clone)]
+struct Cache<T: Clone + fmt::Debug> {
+    data: Vec<T>,
+    max_size: usize,
+}
+
+impl<T: Clone + fmt::Debug> Cache<T> {
+    fn new(max_size: usize) -> Self {
+        Cache {
+            data: Vec::new(),
+            max_size,
+        }
+    }
+
+    fn insert(&mut self, item: T) -> bool {
+        if self.data.len() >= self.max_size {
+            return false; // 已满
+        }
+        self.data.push(item);
+        true
+    }
+
+    fn get(&self, index: usize) -> Option<&T> {
+        self.data.get(index)
+    }
+}
+
+impl<T: Clone + fmt::Debug + fmt::Display> fmt::Display for Cache<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Cache[")?;
+        for (i, item) in self.data.iter().enumerate() {
+            if i > 0 { write!(f, ", ")?; }
+            write!(f, "{}", item)?;
+        }
+        write!(f, "]")
+    }
+}
+
+impl<T: Clone + fmt::Debug> Drop for Cache<T> {
+    fn drop(&mut self) {
+        println!("释放缓存，共 {} 条数据", self.data.len());
+    }
+}
+
+fn main() {
+    let mut cache: Cache<i32> = Cache::new(3);
+    cache.insert(10);
+    cache.insert(20);
+    cache.insert(30);
+    println!("{}", cache); // Cache[10, 20, 30]
+    println!("{:?}", cache); // Cache { data: [10, 20, 30], max_size: 3 }
+
+    let cache2 = cache.clone(); // Clone
+    println!("克隆的缓存：{}", cache2);
+    // 离开作用域时，两个 cache 都会调用 Drop
+}
+```
+
+---
+
+## 小结
+
+- **泛型**让代码在多种类型上复用，语法是 `<T>` + Trait Bound
+- **where 子句**让复杂的 Trait Bound 更易读
+- **单态化**保证泛型零运行时开销，代价是编译时展开为多份代码
+- **Debug/Display**：前者派生即可，后者按需手动实现
+- **Clone/Copy**：Clone 是显式深拷贝，Copy 是隐式按位复制，能用 Copy 时优先用
+- **From/Into**：Rust 惯用的类型转换方式，实现 `From` 自动获得 `Into`
+- **Deref**：支持自动解引用链，解释了为什么很多"不同类型"可以直接传参
+- **Drop**：自定义析构，是 RAII 的核心，不能手动调用，需提前释放用 `std::mem::drop`
+
+下一篇，我们深入 **Iterator**——Rust 标准库里设计最精妙的 Trait，惰性求值、链式操作、零开销抽象，全都藏在这一个 Trait 里。
