@@ -1,0 +1,374 @@
+<!doctype html><html lang=zh-CN data-theme=dark><head><meta charset=UTF-8><meta name=viewport content="width=device-width"><meta name=theme-color content="#222" media="(prefers-color-scheme: dark)"><meta name=generator content="Hugo 0.123.7"><link rel="shortcut icon" type=image/x-icon href=/imgs/icons/zanehy.ico><link rel=icon type=image/x-icon href=/imgs/icons/zanehy.ico><link rel=icon type=image/png sizes=16x16 href=/imgs/icons/zanehy_16x16.jpg><link rel=icon type=image/png sizes=32x32 href=/imgs/icons/zanehy_32_32.jpg><link rel=apple-touch-icon sizes=180x180 href=/imgs/zanehy.jpg><meta itemprop=name content="13 | 闭包深入"><meta itemprop=description content><meta itemprop=datePublished zgotmplz><meta itemprop=dateModified zgotmplz><meta itemprop=image content="https://zanehy.github.io/imgs/zanehy.jpg"><meta itemprop=keywords content="Rust,闭包,Fn,FnMut,FnOnce"><meta property="og:type" content="article"><meta property="og:title" content="13 | 闭包深入"><meta property="og:description" content><meta property="og:image" content="/imgs/zanehy.jpg"><meta property="og:image:width" content="312"><meta property="og:image:height" content="312"><meta property="og:image:type" content="image/jpeg/png/svg/jpg"><meta property="og:url" content="https://zanehy.github.io/blog/rust-13-closures/"><meta property="og:site_name" content="红岩 | 个人博客"><meta property="og:locale" content="zh-CN"><meta property="article:author" content="红岩"><meta property="article:published_time" content="2026-04-24 17:17:00 +0800 CST"><meta property="article:modified_time" content="2026-04-24 17:17:00 +0800 CST"><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/font-awesome/6.1.2/css/all.min.css><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/animate.css/3.1.1/animate.min.css><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/viewerjs/1.11.0/viewer.min.css><link rel=stylesheet href=/css/main.min.33a74da2976ebbac6b4f1852845dfaad330b3fbd6c4e4b31ec4820969c3d5038.css><script type=text/javascript>(function(){localDB={set:function(e,t,n){if(n===0)return;const s=new Date,o=n*864e5,i={value:t,expiry:s.getTime()+o};localStorage.setItem(e,JSON.stringify(i))},get:function(e){const t=localStorage.getItem(e);if(!t)return void 0;const n=JSON.parse(t),s=new Date;return s.getTime()>n.expiry?(localStorage.removeItem(e),void 0):n.value}},theme={active:function(){const e=localDB.get("theme");if(e==null)return;theme.toggle(e),window.matchMedia("(prefers-color-scheme: dark)").addListener(function(e){theme.toggle(e.matches?"dark":"light")})},toggle:function(e){document.documentElement.setAttribute("data-theme",e),localDB.set("theme",e,2);const t=document.querySelector("iframe.giscus-frame");if(t){const n={setConfig:{theme:e}};t.contentWindow.postMessage({giscus:n},"https://giscus.app")}}},theme.active()})(window)</script><script class=next-config data-name=page type=application/json>{"comments":false,"isHome":false,"isPage":true,"path":"rust-13-closures","permalink":"https://zanehy.github.io/blog/rust-13-closures/","title":"13 | 闭包深入","waline":{"js":[{"alias":"waline","alias_name":"@waline/client","file":"dist/pageview.js","name":"pageview","version":"2.13.0"},{"alias":"waline","alias_name":"@waline/client","file":"dist/comment.js","name":"comment","version":"2.13.0"}]}}</script><script type=text/javascript>document.addEventListener("DOMContentLoaded",()=>{var e=document.createElement("script");e.charset="UTF-8",e.src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js",e.async=!1,e.defer=!0,document.head.appendChild(e),e.onload=function(){NexT.utils.fmtBusuanzi()}})</script><title>13 | 闭包深入 - 红岩 | 个人博客</title><noscript><link rel=stylesheet href=/css/noscript.css></noscript></head><body itemscope itemtype=http://schema.org/WebPage class=use-motion><div class=headband></div><main class=main><header class=header itemscope itemtype=http://schema.org/WPHeader><div class=header-inner><div class=site-brand-container><div class=site-nav-toggle><div class=toggle aria-label role=button><span class=toggle-line></span>
+<span class=toggle-line></span>
+<span class=toggle-line></span></div></div><div class=site-meta><a href=/ class=brand rel=start><i class=logo-line></i><h1 class=site-title>红岩 | 个人博客</h1><i class=logo-line></i></a><p class=site-subtitle itemprop=description>记录生活，记录成长</p></div><div class=site-nav-right><div class="toggle popup-trigger"><i class="fa fa-search fa-fw fa-lg"></i></div></div></div><nav class=site-nav><ul class="main-menu menu"><li class="menu-item menu-item-home"><a href=/ class=hvr-icon-pulse rel=section><i class="fa fa-home hvr-icon"></i>首页</a></li><li class="menu-item menu-item-about"><a href=/about.html class=hvr-icon-pulse rel=section><i class="fa fa-user hvr-icon"></i>关于</a></li><li class="menu-item menu-item-my_blog"><a href=/blog/ class=hvr-icon-pulse rel=section><i class="fa fa-blog hvr-icon"></i>技术博客</a></li><li class="menu-item menu-item-my_life"><a href=/life/ class=hvr-icon-pulse rel=section><i class="fa fa-pizza-slice hvr-icon"></i>生活点滴</a></li><li class="menu-item menu-item-archives"><a href=/archives/ class=hvr-icon-pulse rel=section><i class="fa fa-archive hvr-icon"></i>归档日志
+<span class=badge>46</span></a></li><li class="menu-item menu-item-search"><a role=button class="popup-trigger hvr-icon-pulse"><i class="fa fa-search fa-fw hvr-icon"></i>搜索</a></li></ul></nav><div class=search-pop-overlay><div class="popup search-popup"><div class=search-header><span class=search-icon><i class="fa fa-search"></i></span><div class=search-input-container><input autocomplete=off autocapitalize=off maxlength=80 placeholder=搜索... spellcheck=false type=search class=search-input></div><span class=popup-btn-close role=button><i class="fa fa-times-circle"></i></span></div><div class="search-result-container no-result"><div class=search-result-icon><i class="fa fa-spinner fa-pulse fa-5x"></i></div></div></div></div></div><div class="toggle sidebar-toggle" role=button><span class=toggle-line></span>
+<span class=toggle-line></span>
+<span class=toggle-line></span></div><aside class=sidebar><div class="sidebar-inner sidebar-nav-active sidebar-toc-active"><ul class=sidebar-nav><li class=sidebar-nav-toc>文章目录</li><li class=sidebar-nav-overview>站点概览</li></ul><div class=sidebar-panel-container><div class="post-toc-wrap sidebar-panel"><div class="post-toc animated"><nav id=TableOfContents><ul><li><a href=#闭包长什么样>闭包长什么样</a></li><li><a href=#捕获方式闭包怎么拿外部变量>捕获方式：闭包怎么拿外部变量</a><ul><li><a href=#不可变借用t>不可变借用（&amp;T）</a></li><li><a href=#可变借用mut-t>可变借用（&amp;mut T）</a></li><li><a href=#移动所有权t>移动所有权（T）</a></li><li><a href=#编译器怎么选择捕获方式>编译器怎么选择捕获方式</a></li></ul></li><li><a href=#fn--fnmut--fnonce三个关键-trait>Fn / FnMut / FnOnce：三个关键 Trait</a><ul><li><a href=#fnonce只能调用一次>FnOnce：只能调用一次</a></li><li><a href=#fnmut可以多次调用但会改变状态>FnMut：可以多次调用，但会改变状态</a></li><li><a href=#fn最通用可以多次调用且不修改状态>Fn：最通用，可以多次调用且不修改状态</a></li><li><a href=#一张表看清楚>一张表看清楚</a></li></ul></li><li><a href=#move-闭包多线程时的必备>move 闭包：多线程时的必备</a></li><li><a href=#闭包作为函数参数>闭包作为函数参数</a></li><li><a href=#闭包作为返回值>闭包作为返回值</a></li><li><a href=#闭包与迭代器的配合>闭包与迭代器的配合</a><ul><li><a href=#闭包捕获的变量可以在迭代器链中积累状态>闭包捕获的变量可以在迭代器链中积累状态</a></li><li><a href=#用-filter-结合外部条件>用 <code>filter</code> 结合外部条件</a></li><li><a href=#链式调用中的闭包类型推断>链式调用中的闭包类型推断</a></li></ul></li><li><a href=#一个综合例子带缓存的计算器>一个综合例子：带缓存的计算器</a></li><li><a href=#小结>小结</a></li></ul></nav></div></div><div class="site-overview-wrap sidebar-panel"><div class="site-author site-overview-item animated" itemprop=author itemscope itemtype=http://schema.org/Person><img class=site-author-image itemprop=image alt=红岩 src=/imgs/img-lazy-loading.gif data-src=/imgs/zanehy.jpg><p class=site-author-name itemprop=name>红岩</p><div class=site-description itemprop=description></div></div><div class="site-state-wrap site-overview-item animated"><nav class=site-state><div class="site-state-item site-state-posts"><a href=/archives/><span class=site-state-item-count>46</span>
+<span class=site-state-item-name>日志</span></a></div><div class="site-state-item site-state-categories"><a href=/categories/><span class=site-state-item-count>3</span>
+<span class=site-state-item-name>分类</span></a></div><div class="site-state-item site-state-tags"><a href=/tags/><span class=site-state-item-count>87</span>
+<span class=site-state-item-name>标签</span></a></div></nav></div><div class="links-of-social site-overview-item animated"></div></div></div></div><div id=siteinfo-card-widget class=sidebar-card-widget><div class=item-headline><i class="fas fa-chart-line"></i>
+<span>网站资讯</span></div><div class=siteinfo><div class=siteinfo-item><div class=item-name><i class="fa-solid fa-calendar-check"></i>已运行：</div><div class=item-count id=runTimes data-publishdate=2026-03-04T17:00:00+08:00></div></div><div class=siteinfo-item><div class=item-name><i class="fas fa fa-user"></i>总访客数：</div><div class=item-count id=busuanzi_value_site_uv><i class="fa fa-sync fa-spin"></i></div></div><div class=siteinfo-item><div class=item-name><i class="fas fa fa-eye"></i>页面浏览：</div><div class=item-count id=busuanzi_value_site_pv><i class="fa fa-sync fa-spin"></i></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-font"></i>总字数：</div><div class=item-count id=wordsCount data-count=109355></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-mug-hot"></i>阅读约：</div><div class=item-count id=readTimes data-times=245></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-clock-rotate-left"></i>最后更新于：</div><div class=item-count id=last-push-date data-lastpushdate=2026-04-24T17:17:00+08:00></div></div></div></div></aside><div class=sidebar-dimmer></div></header><div class=tool-buttons><div id=toggle-theme class=button title=深浅模式切换><i class="fas fa-adjust"></i></div><div class=back-to-top role=button title=返回顶部><i class="fa fa-arrow-up"></i>
+<span>0%</span></div></div><div class=reading-progress-bar></div><a role=button class="book-mark-link book-mark-link-fixed"></a><a href=https://github.com/zanehy rel="noopener external nofollow noreferrer" target=_blank title="Follow me on GitHub" class="exturl github-corner"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0 0 115 115h15l12 27L250 250V0z"/><path d="M128.3 109C113.8 99.7 119 89.6 119 89.6 122 82.7 120.5 78.6 120.5 78.6 119.2 72 123.4 76.3 123.4 76.3 127.3 80.9 125.5 87.3 125.5 87.3 122.9 97.6 130.6 101.9 134.4 103.2" fill="currentcolor" style="transform-origin:130px 106px" class="octo-arm"/><path d="M115 115C114.9 115.1 118.7 116.5 119.8 115.4l13.9-13.8C136.9 99.2 139.9 98.4 142.2 98.6 133.8 88 127.5 74.4 143.8 58 148.5 53.4 154 51.2 159.7 51 160.3 49.4 163.2 43.6 171.4 40.1 171.4 40.1 176.1 42.5 178.8 56.2 183.1 58.6 187.2 61.8 190.9 65.4 194.5 69 197.7 73.2 200.1 77.6 213.8 80.2 216.3 84.9 216.3 84.9 212.7 93.1 206.9 96 205.4 96.6 205.1 102.4 203 107.8 198.3 112.5 181.9 128.9 168.3 122.5 157.7 114.1 157.9 116.9 156.7 120.9 152.7 124.9L141 136.5C139.8 137.7 141.6 141.9 141.8 141.8z" fill="currentcolor" class="octo-body"/></svg>
+</a><script type=text/javascript src=//sidecar.gitter.im/dist/sidecar.v1.js async></script><script type=text/javascript>((window.gitter={}).chat={}).options={room:"hugo-next/community"}</script><noscript><div class=noscript-warning>Theme NexT works best with JavaScript enabled</div></noscript><div class="main-inner post posts-expand"><div class=post-block><article itemscope itemtype=http://schema.org/Article class=post-content lang><link itemprop=mainEntityOfPage href=https://zanehy.github.io/blog/rust-13-closures/><span hidden itemprop=author itemscope itemtype=http://schema.org/Person><meta itemprop=image content="/imgs/zanehy.jpg"><meta itemprop=name content="红岩"></span><span hidden itemprop=publisher itemscope itemtype=http://schema.org/Organization><meta itemprop=name content="红岩"><meta itemprop=description content></span><span hidden itemprop=post itemscope itemtype=http://schema.org/CreativeWork><meta itemprop=name content="13 | 闭包深入"><meta itemprop=description content="大多数语言都有 lambda 或匿名函数，用起来差不多：传个函数进去，里面能访问外部变量，搞定。 Rust 的闭包表面上也是这样，但背后的机制要复杂得多。Rust 需"></span><header class=post-header><h1 class=post-title itemprop="name headline">13 | 闭包深入</h1><div class=post-meta-container><div class=post-meta-items><span class=post-meta-item><span class=post-meta-item-icon><i class="far fa-calendar"></i>
+</span><span class=post-meta-item-text title=发表于>发表于：
+</span><time title="创建时间：2026-04-24 17:17:00 +0800 CST" itemprop="dateCreated datePublished" datetime="2026-04-24 17:17:00 +0800 CST">2026-04-24
+</time></span><span class=post-meta-item><span class=post-meta-item-icon><i class="far fa-folder-open"></i>
+</span><span class=post-meta-item-text title=分类于>分类于：
+</span><span itemprop=about itemscope itemtype=http://schema.org/Thing><a href=/categories/rust itemprop=url rel=index><span itemprop=name>Rust</span></a></span></span></div><div class=post-meta-items><span class=post-meta-item title=字数><span class=post-meta-item-icon><i class="far fa-file-word"></i>
+</span><span class=post-meta-item-text>字数：</span>
+<span>3860</span>
+</span><span class=post-meta-item title=阅读><span class=post-meta-item-icon><i class="far fa-clock"></i>
+</span><span class=post-meta-item-text>阅读：&ap;</span>
+<span>8分钟</span>
+</span><span class=post-meta-item title=浏览><span class=post-meta-item-icon><i class="far fa-eye"></i>
+</span><span class=post-meta-item-text>浏览：
+</span><span id=busuanzi_value_page_pv data-path=/blog/rust-13-closures/><i class="fa fa-sync fa-spin"></i></span></span></div></div></header><div class="post-body autonumber" itemprop=articleBody><p>大多数语言都有 lambda 或匿名函数，用起来差不多：传个函数进去，里面能访问外部变量，搞定。</p><p>Rust 的闭包表面上也是这样，但背后的机制要复杂得多。Rust 需要在编译期确定闭包捕获了什么、以什么方式捕获，以及这个闭包能被调用几次——因为这直接关系到所有权和内存安全。</p><p>理解闭包，核心是理解三件事：<strong>捕获方式</strong>、<strong>三个 Fn Trait</strong>、<strong>move 关键字</strong>。</p><hr><h2 id=闭包长什么样>闭包长什么样
+<a class=header-anchor href=#%e9%97%ad%e5%8c%85%e9%95%bf%e4%bb%80%e4%b9%88%e6%a0%b7></a></h2><p>先认识一下 Rust 闭包的语法：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> x <span style=color:#f92672>=</span> <span style=color:#ae81ff>5</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 闭包：用 |参数| 表达式 的形式
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> add_x <span style=color:#f92672>=</span> <span style=color:#f92672>|</span>n<span style=color:#f92672>|</span> n <span style=color:#f92672>+</span> x;  <span style=color:#75715e>// 捕获了外部变量 x
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, add_x(<span style=color:#ae81ff>10</span>)); <span style=color:#75715e>// 输出 15
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 多参数，带类型标注（通常可以省略，编译器能推断）
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> multiply <span style=color:#f92672>=</span> <span style=color:#f92672>|</span>a: <span style=color:#66d9ef>i32</span>, b: <span style=color:#66d9ef>i32</span><span style=color:#f92672>|</span> -&gt; <span style=color:#66d9ef>i32</span> { a <span style=color:#f92672>*</span> b };
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, multiply(<span style=color:#ae81ff>3</span>, <span style=color:#ae81ff>4</span>)); <span style=color:#75715e>// 输出 12
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 多行闭包用花括号
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> process <span style=color:#f92672>=</span> <span style=color:#f92672>|</span>s: <span style=color:#66d9ef>&amp;</span><span style=color:#66d9ef>str</span><span style=color:#f92672>|</span> {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> trimmed <span style=color:#f92672>=</span> s.trim();
+</span></span><span style=display:flex><span>        trimmed.to_uppercase()
+</span></span><span style=display:flex><span>    };
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, process(<span style=color:#e6db74>&#34;  hello  &#34;</span>)); <span style=color:#75715e>// 输出 HELLO
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span></code></pre></div><p>和普通函数的区别：</p><ul><li>参数用 <code>||</code> 包裹，不需要写 <code>fn</code> 关键字</li><li>可以省略参数类型和返回类型（大多数情况编译器能推断）</li><li><strong>能捕获外部环境中的变量</strong>——这是普通函数做不到的</li></ul><hr><h2 id=捕获方式闭包怎么拿外部变量>捕获方式：闭包怎么拿外部变量
+<a class=header-anchor href=#%e6%8d%95%e8%8e%b7%e6%96%b9%e5%bc%8f%e9%97%ad%e5%8c%85%e6%80%8e%e4%b9%88%e6%8b%bf%e5%a4%96%e9%83%a8%e5%8f%98%e9%87%8f></a></h2><p>Rust 的闭包可以用三种方式捕获外部变量，对应所有权系统的三种语义：</p><h3 id=不可变借用t>不可变借用（&amp;T）
+<a class=header-anchor href=#%e4%b8%8d%e5%8f%af%e5%8f%98%e5%80%9f%e7%94%a8t></a></h3><p>最轻量的捕获，只读访问：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> message <span style=color:#f92672>=</span> String::from(<span style=color:#e6db74>&#34;hello&#34;</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 闭包只需要读 message，借用即可
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> print_message <span style=color:#f92672>=</span> <span style=color:#f92672>||</span> println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, message);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    print_message(); <span style=color:#75715e>// 输出 hello
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    print_message(); <span style=color:#75715e>// 可以多次调用
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// message 还能继续使用，因为只是借用
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    println!(<span style=color:#e6db74>&#34;原始值还在: </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, message);
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h3 id=可变借用mut-t>可变借用（&amp;mut T）
+<a class=header-anchor href=#%e5%8f%af%e5%8f%98%e5%80%9f%e7%94%a8mut-t></a></h3><p>需要修改外部变量时：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> count <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 闭包需要修改 count，可变借用
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> increment <span style=color:#f92672>=</span> <span style=color:#f92672>||</span> {
+</span></span><span style=display:flex><span>        count <span style=color:#f92672>+=</span> <span style=color:#ae81ff>1</span>;
+</span></span><span style=display:flex><span>        println!(<span style=color:#e6db74>&#34;count = </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, count);
+</span></span><span style=display:flex><span>    };
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    increment(); <span style=color:#75715e>// count = 1
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    increment(); <span style=color:#75715e>// count = 2
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 注意：在闭包存活期间，不能再对 count 做其他借用
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#75715e>// println!(&#34;{}&#34;, count); // 编译错误：count 已被可变借用
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span>    drop(increment); <span style=color:#75715e>// 闭包销毁，可变借用释放
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    println!(<span style=color:#e6db74>&#34;最终 count = </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, count); <span style=color:#75715e>// 现在可以用了
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span></code></pre></div><h3 id=移动所有权t>移动所有权（T）
+<a class=header-anchor href=#%e7%a7%bb%e5%8a%a8%e6%89%80%e6%9c%89%e6%9d%83t></a></h3><p>当需要闭包拥有变量的所有权时，用 <code>move</code> 关键字显式要求：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> data <span style=color:#f92672>=</span> vec![<span style=color:#ae81ff>1</span>, <span style=color:#ae81ff>2</span>, <span style=color:#ae81ff>3</span>];
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 加上 move，data 的所有权转移到闭包内部
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> owns_data <span style=color:#f92672>=</span> <span style=color:#66d9ef>move</span> <span style=color:#f92672>||</span> println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{:?}</span><span style=color:#e6db74>&#34;</span>, data);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    owns_data();
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// println!(&#34;{:?}&#34;, data); // 编译错误：data 已被移走
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span></code></pre></div><h3 id=编译器怎么选择捕获方式>编译器怎么选择捕获方式
+<a class=header-anchor href=#%e7%bc%96%e8%af%91%e5%99%a8%e6%80%8e%e4%b9%88%e9%80%89%e6%8b%a9%e6%8d%95%e8%8e%b7%e6%96%b9%e5%bc%8f></a></h3><p>不加 <code>move</code> 时，编译器会根据闭包体内对变量的使用方式，<strong>自动选择代价最小的捕获方式</strong>：</p><ul><li>只读访问 → 不可变借用</li><li>修改变量 → 可变借用</li><li>移走或消费变量 → 移动所有权</li></ul><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> s <span style=color:#f92672>=</span> String::from(<span style=color:#e6db74>&#34;world&#34;</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> n <span style=color:#f92672>=</span> <span style=color:#ae81ff>42</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// s 只被读取 → 借用 &amp;String
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#75715e>// n 是 Copy 类型 → 直接复制一份
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> show <span style=color:#f92672>=</span> <span style=color:#f92672>||</span> println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74> </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, s, n);
+</span></span><span style=display:flex><span>    show();
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, s); <span style=color:#75715e>// s 还能用，因为只是借用
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, n); <span style=color:#75715e>// n 也还能用
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> v <span style=color:#f92672>=</span> vec![<span style=color:#ae81ff>1</span>, <span style=color:#ae81ff>2</span>, <span style=color:#ae81ff>3</span>];
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// v 被修改 → 可变借用 &amp;mut Vec
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> push_one <span style=color:#f92672>=</span> <span style=color:#f92672>||</span> v.push(<span style=color:#ae81ff>4</span>);
+</span></span><span style=display:flex><span>    push_one();
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{:?}</span><span style=color:#e6db74>&#34;</span>, v); <span style=color:#75715e>// [1, 2, 3, 4]
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span></code></pre></div><hr><h2 id=fn--fnmut--fnonce三个关键-trait>Fn / FnMut / FnOnce：三个关键 Trait
+<a class=header-anchor href=#fn--fnmut--fnonce%e4%b8%89%e4%b8%aa%e5%85%b3%e9%94%ae-trait></a></h2><p>Rust 用三个 Trait 描述闭包能以什么方式被调用，这三个 Trait 的核心区别在于 <code>self</code> 参数：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#75715e>// 可以多次调用，不可变地使用捕获的值
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>trait</span> Fn: FnMut {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>call</span>(<span style=color:#f92672>&amp;</span>self, args: <span style=color:#a6e22e>Args</span>) -&gt; <span style=color:#a6e22e>Output</span>;
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// 可以多次调用，但每次调用可能修改捕获的值
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>trait</span> FnMut: FnOnce {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>call_mut</span>(<span style=color:#f92672>&amp;</span><span style=color:#66d9ef>mut</span> self, args: <span style=color:#a6e22e>Args</span>) -&gt; <span style=color:#a6e22e>Output</span>;
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// 只能调用一次，调用后消耗掉捕获的值
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>trait</span> FnOnce {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>call_once</span>(self, args: <span style=color:#a6e22e>Args</span>) -&gt; <span style=color:#a6e22e>Output</span>;
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>三者的继承关系：<code>Fn</code> 是 <code>FnMut</code> 的子 Trait，<code>FnMut</code> 是 <code>FnOnce</code> 的子 Trait。也就是说，能实现 <code>Fn</code> 的闭包必然也实现了 <code>FnMut</code> 和 <code>FnOnce</code>；能实现 <code>FnMut</code> 的必然也实现了 <code>FnOnce</code>。</p><p>能力越强（<code>Fn</code>），限制越松，使用场景越广。</p><h3 id=fnonce只能调用一次>FnOnce：只能调用一次
+<a class=header-anchor href=#fnonce%e5%8f%aa%e8%83%bd%e8%b0%83%e7%94%a8%e4%b8%80%e6%ac%a1></a></h3><p>闭包内部**消耗了（移走了）**捕获的值，就只能实现 <code>FnOnce</code>：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>consume_string</span>(f: <span style=color:#a6e22e>impl</span> FnOnce() -&gt; String) -&gt; String {
+</span></span><span style=display:flex><span>    f() <span style=color:#75715e>// 只能调用一次
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> s <span style=color:#f92672>=</span> String::from(<span style=color:#e6db74>&#34;hello&#34;</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 这个闭包把 s 移走了，只能调用一次
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> get_string <span style=color:#f92672>=</span> <span style=color:#66d9ef>move</span> <span style=color:#f92672>||</span> s;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> result <span style=color:#f92672>=</span> consume_string(get_string);
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, result); <span style=color:#75715e>// hello
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// consume_string(get_string); // 编译错误：get_string 已被消耗
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span></code></pre></div><p>另一个常见场景——闭包内部调用了消耗值的操作：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> name <span style=color:#f92672>=</span> String::from(<span style=color:#e6db74>&#34;Alice&#34;</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// drop 消耗了 name，这个闭包只能调用一次
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> destroy <span style=color:#f92672>=</span> <span style=color:#66d9ef>move</span> <span style=color:#f92672>||</span> drop(name);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    destroy(); <span style=color:#75715e>// 正常
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#75715e>// destroy(); // 编译错误：已被消耗
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span></code></pre></div><h3 id=fnmut可以多次调用但会改变状态>FnMut：可以多次调用，但会改变状态
+<a class=header-anchor href=#fnmut%e5%8f%af%e4%bb%a5%e5%a4%9a%e6%ac%a1%e8%b0%83%e7%94%a8%e4%bd%86%e4%bc%9a%e6%94%b9%e5%8f%98%e7%8a%b6%e6%80%81></a></h3><p>闭包内部<strong>修改了</strong>捕获的值，实现 <code>FnMut</code>：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>apply_twice</span><span style=color:#f92672>&lt;</span>F: FnMut(<span style=color:#66d9ef>i32</span>) -&gt; <span style=color:#66d9ef>i32</span><span style=color:#f92672>&gt;</span>(<span style=color:#66d9ef>mut</span> f: <span style=color:#a6e22e>F</span>, x: <span style=color:#66d9ef>i32</span>) -&gt; <span style=color:#66d9ef>i32</span> {
+</span></span><span style=display:flex><span>    f(f(x))
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> offset <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 每次调用都会修改 offset
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> accumulate <span style=color:#f92672>=</span> <span style=color:#f92672>|</span>x<span style=color:#f92672>|</span> {
+</span></span><span style=display:flex><span>        offset <span style=color:#f92672>+=</span> x;
+</span></span><span style=display:flex><span>        offset
+</span></span><span style=display:flex><span>    };
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, accumulate(<span style=color:#ae81ff>5</span>));  <span style=color:#75715e>// 5
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, accumulate(<span style=color:#ae81ff>3</span>));  <span style=color:#75715e>// 8（5+3）
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, accumulate(<span style=color:#ae81ff>2</span>));  <span style=color:#75715e>// 10（8+2）
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span></code></pre></div><p>注意：调用 <code>FnMut</code> 闭包时，变量本身需要声明为 <code>mut</code>（<code>let mut f = ...</code>），或者函数参数接收时写 <code>mut f</code>。</p><h3 id=fn最通用可以多次调用且不修改状态>Fn：最通用，可以多次调用且不修改状态
+<a class=header-anchor href=#fn%e6%9c%80%e9%80%9a%e7%94%a8%e5%8f%af%e4%bb%a5%e5%a4%9a%e6%ac%a1%e8%b0%83%e7%94%a8%e4%b8%94%e4%b8%8d%e4%bf%ae%e6%94%b9%e7%8a%b6%e6%80%81></a></h3><p>闭包只<strong>读取</strong>捕获的值（或者根本不捕获），实现 <code>Fn</code>：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>apply_to_list</span><span style=color:#f92672>&lt;</span>F: Fn(<span style=color:#66d9ef>i32</span>) -&gt; <span style=color:#66d9ef>i32</span><span style=color:#f92672>&gt;</span>(f: <span style=color:#a6e22e>F</span>, list: <span style=color:#66d9ef>&amp;</span>[<span style=color:#66d9ef>i32</span>]) -&gt; Vec<span style=color:#f92672>&lt;</span><span style=color:#66d9ef>i32</span><span style=color:#f92672>&gt;</span> {
+</span></span><span style=display:flex><span>    list.iter().map(<span style=color:#f92672>|&amp;</span>x<span style=color:#f92672>|</span> f(x)).collect()
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> multiplier <span style=color:#f92672>=</span> <span style=color:#ae81ff>3</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 只读取 multiplier，实现 Fn
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> triple <span style=color:#f92672>=</span> <span style=color:#f92672>|</span>x<span style=color:#f92672>|</span> x <span style=color:#f92672>*</span> multiplier;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> numbers <span style=color:#f92672>=</span> vec![<span style=color:#ae81ff>1</span>, <span style=color:#ae81ff>2</span>, <span style=color:#ae81ff>3</span>, <span style=color:#ae81ff>4</span>, <span style=color:#ae81ff>5</span>];
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> result <span style=color:#f92672>=</span> apply_to_list(triple, <span style=color:#f92672>&amp;</span>numbers);
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{:?}</span><span style=color:#e6db74>&#34;</span>, result); <span style=color:#75715e>// [3, 6, 9, 12, 15]
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// triple 还能继续用，因为只是借用
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, triple(<span style=color:#ae81ff>10</span>)); <span style=color:#75715e>// 30
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span></code></pre></div><h3 id=一张表看清楚>一张表看清楚
+<a class=header-anchor href=#%e4%b8%80%e5%bc%a0%e8%a1%a8%e7%9c%8b%e6%b8%85%e6%a5%9a></a></h3><table><thead><tr><th>Trait</th><th>调用次数</th><th>对捕获值的操作</th><th>典型场景</th></tr></thead><tbody><tr><td><code>FnOnce</code></td><td>只能一次</td><td>消耗（移走）</td><td>闭包转移所有权</td></tr><tr><td><code>FnMut</code></td><td>多次</td><td>修改</td><td>带状态的闭包</td></tr><tr><td><code>Fn</code></td><td>多次</td><td>只读</td><td>无状态或纯函数</td></tr></tbody></table><hr><h2 id=move-闭包多线程时的必备>move 闭包：多线程时的必备
+<a class=header-anchor href=#move-%e9%97%ad%e5%8c%85%e5%a4%9a%e7%ba%bf%e7%a8%8b%e6%97%b6%e7%9a%84%e5%bf%85%e5%a4%87></a></h2><p><code>move</code> 关键字强制闭包<strong>取得所有捕获变量的所有权</strong>，无论闭包实际上是否需要修改或消耗它们。</p><p>最常见的场景是把闭包传给新线程：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>use</span> std::thread;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> message <span style=color:#f92672>=</span> String::from(<span style=color:#e6db74>&#34;来自主线程的问候&#34;</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 必须用 move，因为新线程的生命周期可能比 message 长
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> handle <span style=color:#f92672>=</span> thread::spawn(<span style=color:#66d9ef>move</span> <span style=color:#f92672>||</span> {
+</span></span><span style=display:flex><span>        println!(<span style=color:#e6db74>&#34;子线程收到: </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, message);
+</span></span><span style=display:flex><span>    });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// message 已经被移入闭包，这里不能再用了
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#75715e>// println!(&#34;{}&#34;, message); // 编译错误
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span>    handle.join().unwrap();
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>为什么线程必须用 <code>move</code>？</p><p>不用 <code>move</code> 的话，闭包会借用 <code>message</code>，但编译器无法保证主线程不会在子线程还在跑的时候销毁 <code>message</code>。用 <code>move</code> 把所有权转入闭包，子线程完全拥有这个数据，生命周期问题消失了。</p><p>在 <code>tokio</code> 里，异步任务同样要求闭包持有数据的所有权（需要 <code>'static</code>）：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio::task;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#[tokio::main]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> data <span style=color:#f92672>=</span> vec![<span style=color:#ae81ff>1</span>, <span style=color:#ae81ff>2</span>, <span style=color:#ae81ff>3</span>];
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// async 任务也需要 move
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> handle <span style=color:#f92672>=</span> task::spawn(<span style=color:#66d9ef>async</span> <span style=color:#66d9ef>move</span> {
+</span></span><span style=display:flex><span>        println!(<span style=color:#e6db74>&#34;异步任务拿到数据: </span><span style=color:#e6db74>{:?}</span><span style=color:#e6db74>&#34;</span>, data);
+</span></span><span style=display:flex><span>    });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    handle.<span style=color:#66d9ef>await</span>.unwrap();
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p><code>move</code> 和 <code>Fn</code> 系列 Trait 是两个独立的概念，不要混淆：</p><ul><li><code>move</code> 描述的是<strong>捕获方式</strong>（是否获取所有权）</li><li><code>Fn</code>/<code>FnMut</code>/<code>FnOnce</code> 描述的是<strong>调用方式</strong>（对捕获值做什么操作）</li></ul><p>一个 <code>move</code> 闭包如果只读取捕获的值，依然实现 <code>Fn</code>；如果修改，实现 <code>FnMut</code>；如果消耗，实现 <code>FnOnce</code>。</p><hr><h2 id=闭包作为函数参数>闭包作为函数参数
+<a class=header-anchor href=#%e9%97%ad%e5%8c%85%e4%bd%9c%e4%b8%ba%e5%87%bd%e6%95%b0%e5%8f%82%e6%95%b0></a></h2><p>接收闭包参数时，用泛型加 Trait 约束是最高效的方式（静态分发，编译期单态化）：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#75715e>// impl Trait 语法（推荐，简洁）
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>apply</span><span style=color:#f92672>&lt;</span>F: Fn(<span style=color:#66d9ef>i32</span>) -&gt; <span style=color:#66d9ef>i32</span><span style=color:#f92672>&gt;</span>(f: <span style=color:#a6e22e>F</span>, x: <span style=color:#66d9ef>i32</span>) -&gt; <span style=color:#66d9ef>i32</span> {
+</span></span><span style=display:flex><span>    f(x)
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// where 子句（参数多时更清晰）
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>apply_twice</span><span style=color:#f92672>&lt;</span>F<span style=color:#f92672>&gt;</span>(f: <span style=color:#a6e22e>F</span>, x: <span style=color:#66d9ef>i32</span>) -&gt; <span style=color:#66d9ef>i32</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>where</span>
+</span></span><span style=display:flex><span>    F: Fn(<span style=color:#66d9ef>i32</span>) -&gt; <span style=color:#66d9ef>i32</span>,
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>    f(f(x))
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// 接收可变闭包
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>repeat</span><span style=color:#f92672>&lt;</span>F: FnMut() -&gt; String<span style=color:#f92672>&gt;</span>(<span style=color:#66d9ef>mut</span> f: <span style=color:#a6e22e>F</span>, n: <span style=color:#66d9ef>usize</span>) -&gt; Vec<span style=color:#f92672>&lt;</span>String<span style=color:#f92672>&gt;</span> {
+</span></span><span style=display:flex><span>    (<span style=color:#ae81ff>0</span><span style=color:#f92672>..</span>n).map(<span style=color:#f92672>|</span>_<span style=color:#f92672>|</span> f()).collect()
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> double <span style=color:#f92672>=</span> <span style=color:#f92672>|</span>x<span style=color:#f92672>|</span> x <span style=color:#f92672>*</span> <span style=color:#ae81ff>2</span>;
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, apply(double, <span style=color:#ae81ff>5</span>));        <span style=color:#75715e>// 10
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, apply_twice(double, <span style=color:#ae81ff>3</span>));  <span style=color:#75715e>// 12（3*2=6，6*2=12）
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> counter <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>;
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> make_item <span style=color:#f92672>=</span> <span style=color:#f92672>||</span> {
+</span></span><span style=display:flex><span>        counter <span style=color:#f92672>+=</span> <span style=color:#ae81ff>1</span>;
+</span></span><span style=display:flex><span>        format!(<span style=color:#e6db74>&#34;item-</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, counter)
+</span></span><span style=display:flex><span>    };
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{:?}</span><span style=color:#e6db74>&#34;</span>, repeat(make_item, <span style=color:#ae81ff>3</span>)); <span style=color:#75715e>// [&#34;item-1&#34;, &#34;item-2&#34;, &#34;item-3&#34;]
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span></code></pre></div><p><strong>什么时候用 <code>dyn Fn</code> 而不是泛型？</strong></p><p>泛型每种闭包类型生成一份代码（单态化），性能最好，但不能把不同闭包放在同一个容器里。</p><p>当你需要把闭包存到 <code>Vec</code> 或结构体字段里，或者需要运行时动态选择，才用 <code>Box&lt;dyn Fn></code>：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#75715e>// 存储多个不同类型的闭包（动态分发）
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>build_transformers</span>() -&gt; Vec<span style=color:#f92672>&lt;</span>Box<span style=color:#f92672>&lt;</span><span style=color:#66d9ef>dyn</span> Fn(<span style=color:#66d9ef>i32</span>) -&gt; <span style=color:#66d9ef>i32</span><span style=color:#f92672>&gt;&gt;</span> {
+</span></span><span style=display:flex><span>    vec![
+</span></span><span style=display:flex><span>        Box::new(<span style=color:#f92672>|</span>x<span style=color:#f92672>|</span> x <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span>),
+</span></span><span style=display:flex><span>        Box::new(<span style=color:#f92672>|</span>x<span style=color:#f92672>|</span> x <span style=color:#f92672>*</span> <span style=color:#ae81ff>2</span>),
+</span></span><span style=display:flex><span>        Box::new(<span style=color:#f92672>|</span>x<span style=color:#f92672>|</span> x <span style=color:#f92672>*</span> x),
+</span></span><span style=display:flex><span>    ]
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> transformers <span style=color:#f92672>=</span> build_transformers();
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> input <span style=color:#f92672>=</span> <span style=color:#ae81ff>3</span>;
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> f <span style=color:#66d9ef>in</span> <span style=color:#f92672>&amp;</span>transformers {
+</span></span><span style=display:flex><span>        println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, f(input)); <span style=color:#75715e>// 4, 6, 9
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><hr><h2 id=闭包作为返回值>闭包作为返回值
+<a class=header-anchor href=#%e9%97%ad%e5%8c%85%e4%bd%9c%e4%b8%ba%e8%bf%94%e5%9b%9e%e5%80%bc></a></h2><p>从函数返回闭包时，因为闭包的具体类型在编译期对调用方不可见，必须用 <code>Box&lt;dyn Fn></code> 或 <code>impl Fn</code> 语法：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#75715e>// impl Fn：返回类型不透明，但编译期确定（推荐）
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>make_adder</span>(x: <span style=color:#66d9ef>i32</span>) -&gt; <span style=color:#a6e22e>impl</span> Fn(<span style=color:#66d9ef>i32</span>) -&gt; <span style=color:#66d9ef>i32</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>move</span> <span style=color:#f92672>|</span>n<span style=color:#f92672>|</span> n <span style=color:#f92672>+</span> x
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// Box&lt;dyn Fn&gt;：堆分配，可以在不同分支返回不同闭包
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>make_transformer</span>(mode: <span style=color:#66d9ef>&amp;</span><span style=color:#66d9ef>str</span>) -&gt; Box<span style=color:#f92672>&lt;</span><span style=color:#66d9ef>dyn</span> Fn(<span style=color:#66d9ef>i32</span>) -&gt; <span style=color:#66d9ef>i32</span><span style=color:#f92672>&gt;</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>match</span> mode {
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;double&#34;</span> <span style=color:#f92672>=&gt;</span> Box::new(<span style=color:#f92672>|</span>x<span style=color:#f92672>|</span> x <span style=color:#f92672>*</span> <span style=color:#ae81ff>2</span>),
+</span></span><span style=display:flex><span>        <span style=color:#e6db74>&#34;square&#34;</span> <span style=color:#f92672>=&gt;</span> Box::new(<span style=color:#f92672>|</span>x<span style=color:#f92672>|</span> x <span style=color:#f92672>*</span> x),
+</span></span><span style=display:flex><span>        _        <span style=color:#f92672>=&gt;</span> Box::new(<span style=color:#f92672>|</span>x<span style=color:#f92672>|</span> x),
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> add5 <span style=color:#f92672>=</span> make_adder(<span style=color:#ae81ff>5</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> add10 <span style=color:#f92672>=</span> make_adder(<span style=color:#ae81ff>10</span>);
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, add5(<span style=color:#ae81ff>3</span>));  <span style=color:#75715e>// 8
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, add10(<span style=color:#ae81ff>3</span>)); <span style=color:#75715e>// 13
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> f <span style=color:#f92672>=</span> make_transformer(<span style=color:#e6db74>&#34;double&#34;</span>);
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, f(<span style=color:#ae81ff>7</span>)); <span style=color:#75715e>// 14
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span></code></pre></div><p><code>impl Fn</code> 和 <code>Box&lt;dyn Fn></code> 的选择：</p><ul><li>如果函数只有一种返回情况，用 <code>impl Fn</code>——零成本，没有堆分配</li><li>如果不同分支要返回不同类型的闭包（<code>match</code> 的各个臂），用 <code>Box&lt;dyn Fn></code>——因为 <code>impl Fn</code> 要求所有分支返回同一个类型</li></ul><hr><h2 id=闭包与迭代器的配合>闭包与迭代器的配合
+<a class=header-anchor href=#%e9%97%ad%e5%8c%85%e4%b8%8e%e8%bf%ad%e4%bb%a3%e5%99%a8%e7%9a%84%e9%85%8d%e5%90%88></a></h2><p>闭包最高频的使用场景就是作为迭代器适配器的参数，第 11 篇已经展示了很多。这里补充几个闭包特性和迭代器结合时容易踩坑的地方。</p><h3 id=闭包捕获的变量可以在迭代器链中积累状态>闭包捕获的变量可以在迭代器链中积累状态
+<a class=header-anchor href=#%e9%97%ad%e5%8c%85%e6%8d%95%e8%8e%b7%e7%9a%84%e5%8f%98%e9%87%8f%e5%8f%af%e4%bb%a5%e5%9c%a8%e8%bf%ad%e4%bb%a3%e5%99%a8%e9%93%be%e4%b8%ad%e7%a7%af%e7%b4%af%e7%8a%b6%e6%80%81></a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> numbers <span style=color:#f92672>=</span> vec![<span style=color:#ae81ff>1</span>, <span style=color:#ae81ff>2</span>, <span style=color:#ae81ff>3</span>, <span style=color:#ae81ff>4</span>, <span style=color:#ae81ff>5</span>, <span style=color:#ae81ff>6</span>, <span style=color:#ae81ff>7</span>, <span style=color:#ae81ff>8</span>, <span style=color:#ae81ff>9</span>, <span style=color:#ae81ff>10</span>];
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> running_sum <span style=color:#f92672>=</span> <span style=color:#ae81ff>0</span>;
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> cumulative: Vec<span style=color:#f92672>&lt;</span><span style=color:#66d9ef>i32</span><span style=color:#f92672>&gt;</span> <span style=color:#f92672>=</span> numbers
+</span></span><span style=display:flex><span>        .iter()
+</span></span><span style=display:flex><span>        .map(<span style=color:#f92672>|&amp;</span>x<span style=color:#f92672>|</span> {
+</span></span><span style=display:flex><span>            running_sum <span style=color:#f92672>+=</span> x;
+</span></span><span style=display:flex><span>            running_sum <span style=color:#75715e>// 每次返回当前累计值
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>        })
+</span></span><span style=display:flex><span>        .collect();
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{:?}</span><span style=color:#e6db74>&#34;</span>, cumulative);
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// [1, 3, 6, 10, 15, 21, 28, 36, 45, 55]
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span></code></pre></div><p>这里的 <code>map</code> 闭包捕获并修改了外部的 <code>running_sum</code>，是一个 <code>FnMut</code> 闭包。</p><h3 id=用-filter-结合外部条件>用 <code>filter</code> 结合外部条件
+<a class=header-anchor href=#%e7%94%a8-filter-%e7%bb%93%e5%90%88%e5%a4%96%e9%83%a8%e6%9d%a1%e4%bb%b6></a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>filter_by_threshold</span>(numbers: <span style=color:#66d9ef>&amp;</span>[<span style=color:#66d9ef>i32</span>], threshold: <span style=color:#66d9ef>i32</span>) -&gt; Vec<span style=color:#f92672>&lt;</span><span style=color:#66d9ef>i32</span><span style=color:#f92672>&gt;</span> {
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// threshold 被借用进闭包
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    numbers.iter()
+</span></span><span style=display:flex><span>        .filter(<span style=color:#f92672>|&amp;&amp;</span>x<span style=color:#f92672>|</span> x <span style=color:#f92672>&gt;</span> threshold)
+</span></span><span style=display:flex><span>        .copied()
+</span></span><span style=display:flex><span>        .collect()
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> nums <span style=color:#f92672>=</span> vec![<span style=color:#ae81ff>1</span>, <span style=color:#ae81ff>5</span>, <span style=color:#ae81ff>3</span>, <span style=color:#ae81ff>8</span>, <span style=color:#ae81ff>2</span>, <span style=color:#ae81ff>7</span>, <span style=color:#ae81ff>4</span>, <span style=color:#ae81ff>6</span>];
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{:?}</span><span style=color:#e6db74>&#34;</span>, filter_by_threshold(<span style=color:#f92672>&amp;</span>nums, <span style=color:#ae81ff>4</span>)); <span style=color:#75715e>// [5, 8, 7, 6]
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span></code></pre></div><h3 id=链式调用中的闭包类型推断>链式调用中的闭包类型推断
+<a class=header-anchor href=#%e9%93%be%e5%bc%8f%e8%b0%83%e7%94%a8%e4%b8%ad%e7%9a%84%e9%97%ad%e5%8c%85%e7%b1%bb%e5%9e%8b%e6%8e%a8%e6%96%ad></a></h3><p>Rust 能根据上下文推断闭包参数类型，这让迭代器链写起来很流畅：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> words <span style=color:#f92672>=</span> vec![<span style=color:#e6db74>&#34;hello&#34;</span>, <span style=color:#e6db74>&#34;world&#34;</span>, <span style=color:#e6db74>&#34;rust&#34;</span>, <span style=color:#e6db74>&#34;closures&#34;</span>];
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> result: Vec<span style=color:#f92672>&lt;</span>String<span style=color:#f92672>&gt;</span> <span style=color:#f92672>=</span> words
+</span></span><span style=display:flex><span>        .iter()
+</span></span><span style=display:flex><span>        .filter(<span style=color:#f92672>|</span>w<span style=color:#f92672>|</span> w.len() <span style=color:#f92672>&gt;</span> <span style=color:#ae81ff>4</span>)      <span style=color:#75715e>// 编译器推断 w 是 &amp;&amp;str
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>        .map(<span style=color:#f92672>|</span>w<span style=color:#f92672>|</span> w.to_uppercase())     <span style=color:#75715e>// 推断 w 是 &amp;&amp;str，返回 String
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>        .collect();
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{:?}</span><span style=color:#e6db74>&#34;</span>, result); <span style=color:#75715e>// [&#34;HELLO&#34;, &#34;WORLD&#34;, &#34;CLOSURES&#34;]
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span></code></pre></div><hr><h2 id=一个综合例子带缓存的计算器>一个综合例子：带缓存的计算器
+<a class=header-anchor href=#%e4%b8%80%e4%b8%aa%e7%bb%bc%e5%90%88%e4%be%8b%e5%ad%90%e5%b8%a6%e7%bc%93%e5%ad%98%e7%9a%84%e8%ae%a1%e7%ae%97%e5%99%a8></a></h2><p>把闭包的几个特性综合起来，实现一个带缓存的惰性计算器。这是 Rust 官方书里的经典例子，略加扩展：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>use</span> std::collections::HashMap;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>struct</span> <span style=color:#a6e22e>Cacher</span><span style=color:#f92672>&lt;</span>T<span style=color:#f92672>&gt;</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>where</span>
+</span></span><span style=display:flex><span>    T: Fn(<span style=color:#66d9ef>i32</span>) -&gt; <span style=color:#66d9ef>i32</span>,
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>    calculation: <span style=color:#a6e22e>T</span>,
+</span></span><span style=display:flex><span>    cache: <span style=color:#a6e22e>HashMap</span><span style=color:#f92672>&lt;</span><span style=color:#66d9ef>i32</span>, <span style=color:#66d9ef>i32</span><span style=color:#f92672>&gt;</span>,
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>impl</span><span style=color:#f92672>&lt;</span>T<span style=color:#f92672>&gt;</span> Cacher<span style=color:#f92672>&lt;</span>T<span style=color:#f92672>&gt;</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>where</span>
+</span></span><span style=display:flex><span>    T: Fn(<span style=color:#66d9ef>i32</span>) -&gt; <span style=color:#66d9ef>i32</span>,
+</span></span><span style=display:flex><span>{
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>new</span>(calculation: <span style=color:#a6e22e>T</span>) -&gt; <span style=color:#a6e22e>Cacher</span><span style=color:#f92672>&lt;</span>T<span style=color:#f92672>&gt;</span> {
+</span></span><span style=display:flex><span>        Cacher {
+</span></span><span style=display:flex><span>            calculation,
+</span></span><span style=display:flex><span>            cache: <span style=color:#a6e22e>HashMap</span>::new(),
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>value</span>(<span style=color:#f92672>&amp;</span><span style=color:#66d9ef>mut</span> self, arg: <span style=color:#66d9ef>i32</span>) -&gt; <span style=color:#66d9ef>i32</span> {
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// 有缓存就直接返回，没有就计算并缓存
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>        <span style=color:#f92672>*</span>self.cache.entry(arg).or_insert_with(<span style=color:#f92672>||</span> (self.calculation)(arg))
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> expensive_result <span style=color:#f92672>=</span> Cacher::new(<span style=color:#f92672>|</span>x<span style=color:#f92672>|</span> {
+</span></span><span style=display:flex><span>        println!(<span style=color:#e6db74>&#34;计算 </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>...&#34;</span>, x);
+</span></span><span style=display:flex><span>        x <span style=color:#f92672>*</span> x <span style=color:#f92672>+</span> x <span style=color:#f92672>+</span> <span style=color:#ae81ff>1</span> <span style=color:#75715e>// 模拟耗时计算
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;结果: </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, expensive_result.value(<span style=color:#ae81ff>5</span>));  <span style=color:#75715e>// 计算 5... 结果: 31
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    println!(<span style=color:#e6db74>&#34;结果: </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, expensive_result.value(<span style=color:#ae81ff>5</span>));  <span style=color:#75715e>// 直接从缓存取，不打印&#34;计算...&#34;
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    println!(<span style=color:#e6db74>&#34;结果: </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, expensive_result.value(<span style=color:#ae81ff>3</span>));  <span style=color:#75715e>// 计算 3... 结果: 13
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    println!(<span style=color:#e6db74>&#34;结果: </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, expensive_result.value(<span style=color:#ae81ff>3</span>));  <span style=color:#75715e>// 缓存
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span></code></pre></div><p>这个例子里：</p><ul><li><code>Cacher</code> 的泛型参数 <code>T: Fn(i32) -> i32</code> 约束了计算函数的类型</li><li>闭包 <code>|x| { ... }</code> 捕获了外部环境（这里没有，但可以捕获），存入结构体</li><li><code>or_insert_with</code> 接受一个 <code>FnOnce</code> 闭包，只在键不存在时才调用——惰性求值</li></ul><hr><h2 id=小结>小结
+<a class=header-anchor href=#%e5%b0%8f%e7%bb%93></a></h2><ul><li><strong>捕获方式</strong>：编译器自动选择代价最小的方式（借用 → 可变借用 → 移动）；<code>move</code> 强制取得所有权</li><li><strong>FnOnce</strong>：消耗捕获值，只能调用一次；所有闭包都实现 <code>FnOnce</code></li><li><strong>FnMut</strong>：修改捕获值，可以多次调用；调用时需要 <code>mut</code> 绑定</li><li><strong>Fn</strong>：只读捕获值，最通用，可以多次调用</li><li><strong>move 闭包</strong>：多线程和异步任务的标配，解决生命周期问题</li><li><strong>参数类型</strong>：泛型 + Trait 约束用于静态分发（高性能）；<code>Box&lt;dyn Fn></code> 用于动态分发（灵活存储）</li><li><strong>返回闭包</strong>：优先用 <code>impl Fn</code>，需要多种返回类型时用 <code>Box&lt;dyn Fn></code></li><li><strong>与迭代器配合</strong>：闭包是迭代器 API 的基础，<code>map</code>/<code>filter</code>/<code>fold</code> 都接收闭包</li></ul><p>下一篇，我们进入并发领域——<strong>Rust 并发基础</strong>，看看所有权系统是如何从根本上消灭数据竞争的，以及 <code>Send</code>/<code>Sync</code> 这两个编译期保证"无畏并发"的 Trait 是怎么工作的。</p></div><footer class=post-footer><div class=post-tags><a href=/tags/rust>Rust
+</a><a href=/tags/%e9%97%ad%e5%8c%85>闭包
+</a><a href=/tags/fn>Fn
+</a><a href=/tags/fnmut>FnMut
+</a><a href=/tags/fnonce>FnOnce</a></div><div class=addthis_inline_share_toolbox style=text-align:center></div><hr><div class=post-copyright><img src=/imgs/cc/cc.svg width=75 height=75 align=right alt=共享知识><ul><li class=post-copyright-title><strong>文章标题：</strong>
+13 | 闭包深入</li><li class=post-copyright-author><strong>本文作者： </strong>红岩</li><li class=post-copyright-link><strong>本文链接：</strong>
+<a id=post-cr-link href=https://zanehy.github.io/blog/rust-13-closures/ title="13 | 闭包深入">https://zanehy.github.io/blog/rust-13-closures/</a></li><li class=post-copyright-license><strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <i class="fab fa-fw fa-creative-commons"></i><a target=_blank href=https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh>BY-NC-SA</a> 许可协议。转载请注明出处！</li></ul></div><div class=post-nav><div class="post-nav-next post-nav-item"></div><div class="post-nav-prev post-nav-item"><a href=/blog/rust-12-error-handling/ rel=prev title="12 | 错误处理体系">12 | 错误处理体系
+<i class="fa fa-chevron-right"></i></a></div></div></footer></article></div></div></main><footer class=footer><div class=footer-inner><div class=copyright>&copy;
+<span itemprop=copyrightYear>2024 - 2026
+</span><span class=with-love><i class="fa fa-heart"></i>
+</span><span class=author itemprop=copyrightHolder>红岩</span></div><div class=powered-by>由 <a href=https://gohugo.io title=0.123.7 target=_blank>Hugo</a> & <a href=https://github.com/hugo-next/hugo-theme-next title=4.5.3 target=_blank>Hugo NexT.Gemini</a> 强力驱动</div></div></footer><script type=text/javascript src=https://cdn.staticfile.org/animejs/3.2.1/anime.min.js defer></script><script type=text/javascript src=https://cdn.staticfile.org/viewerjs/1.11.0/viewer.min.js defer></script><script class=next-config data-name=main type=application/json>{"bookmark":{"color":"#888","enable":true,"save":"manual"},"copybtn":true,"darkmode":true,"giscus":{"cfg":{"category":"Comments","categoryid":null,"emit":false,"inputposition":"top","mapping":"title","reactions":false,"repo":"username/repo-name","repoid":null,"theme":"preferred_color_scheme"},"js":"https://giscus.app/client.js"},"hostname":"https://zanehy.github.io/","i18n":{"ds_day":" 天前","ds_days":" 天 ","ds_hour":" 小时前","ds_hours":" 小时 ","ds_just":"刚刚","ds_min":" 分钟前","ds_mins":" 分钟","ds_month":" 个月前","ds_years":" 年 ","empty":"没有找到任何搜索结果：${query}","hits":"找到 ${hits} 个搜索结果","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","placeholder":"搜索..."},"lang":"zh-CN","lazyload":false,"localSearch":{"enable":true,"limit":1e3,"path":"/searchindexes.xml","preload":true,"topnperarticle":-1,"trigger":"auto","unescape":true},"motion":{"async":true,"enable":true,"transition":{"collheader":"fadeInLeft","postblock":"fadeIn","postbody":"fadeInDown","postheader":"fadeInDown","sidebar":"fadeInUp"}},"postmeta":{"comments":{"enable":true,"plugin":"waline"},"views":{"enable":true,"plugin":"busuanzi"}},"root":"/","scheme":"Gemini","sidebar":{"display":"post","offset":12,"padding":18,"position":"left","width":256},"vendor":{"plugins":"qiniu","router":"https://cdn.staticfile.org"},"version":"4.5.3","waline":{"cfg":{"emoji":false,"imguploader":false,"placeholder":"请文明发言哟 ヾ(≧▽≦*)o","reaction":true,"reactiontext":["点赞","踩一下","得意","不屑","尴尬","睡觉"],"reactiontitle":"你认为这篇文章怎么样？","requiredmeta":["nick","mail"],"serverurl":null,"sofa":"快来发表你的意见吧 (≧∀≦)ゞ","wordlimit":200},"css":{"alias":"waline","file":"dist/waline.css","name":"@waline/client","version":"2.13.0"},"js":{"alias":"waline","file":"dist/waline.js","name":"@waline/client","version":"2.13.0"}}}</script><script type=text/javascript src=/js/main.min.0b6f435ab2b781f04f78d578f42b492c126726d94b54a88d0af9aaf3c50c4457.js defer></script></body></html>
