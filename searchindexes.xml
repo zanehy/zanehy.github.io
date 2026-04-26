@@ -1,4 +1,12 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>13 | 闭包深入</title><url>/blog/rust-13-closures/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>闭包</tag><tag>Fn</tag><tag>FnMut</tag><tag>FnOnce</tag></tags><content type="html"><![CDATA[  大多数语言都有 lambda 或匿名函数，用起来差不多：传个函数进去，里面能访问外部变量，搞定。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>14 | Rust 并发基础</title><url>/blog/rust-14-concurrency/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>并发</tag><tag>线程</tag><tag>Mutex</tag><tag>Channel</tag><tag>Send</tag><tag>Sync</tag></tags><content type="html"><![CDATA[  Go 有一句名言：&amp;ldquo;不要通过共享内存来通信，而要通过通信来共享内存。&amp;ldquo;这句话出现的原因，是因为共享内存并发太容易出错——数据竞争、死锁、忘记加锁，这些 bug 在 C/C++ 里困扰了程序员几十年。
+Rust 的答案更激进：在编译期就消灭数据竞争。不是靠运行时检测，不是靠程序员自律，而是让编译器拒绝编译任何可能产生数据竞争的代码。
+这一切的底气来自所有权系统——那两个神秘的 Trait：Send 和 Sync。
+Send 和 Sync：并发安全的编译期保证 Send 和 Sync 是 Rust 标准库里最简单也最重要的两个 Trait，它们没有任何方法，纯粹是标记：
+// 标记 Trait，没有任何方法 pub unsafe auto trait Send {} pub unsafe auto trait Sync {} Send：类型的所有权可以在线程间转移。如果 T: Send，就可以把 T 的值从一个线程移到另一个线程。
+Sync：类型可以被多个线程同时引用。如果 T: Sync，就可以在多个线程里同时持有 &amp;amp;T（等价于 &amp;amp;T: Send）。
+绝大多数类型都自动实现了这两个 Trait——i32、String、Vec&amp;lt;T&amp;gt;（当 T: Send）等等。编译器会自动推导：只要类型的所有字段都是 Send，这个类型就是 Send；字段都是 Sync，这个类型就是 Sync。
+哪些类型不是 Send/Sync？
+use std::rc::Rc; use std::cell::RefCell; // Rc&amp;lt;T&amp;gt;：不是 Send，也不是 Sync // 原因：Rc 的引用计数用的是普通整数，不是原子操作，多线程访问会出问题 let rc = Rc::new(42); // thread::spawn(move || println!(&amp;#34;{}&amp;#34;, rc)); // 编译错误！Rc 不是 Send // RefCell&amp;lt;T&amp;gt;：是 Send（如果 T: Send），但不是 Sync // 原因：RefCell 的运行时借用检查不是线程安全的 let cell = RefCell::new(42); // 可以 move 到另一个线程，但不能同时被多个线程引用 对应的线程安全版本：Rc → …  ]]></content></entry><entry><title>13 | 闭包深入</title><url>/blog/rust-13-closures/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>闭包</tag><tag>Fn</tag><tag>FnMut</tag><tag>FnOnce</tag></tags><content type="html"><![CDATA[  大多数语言都有 lambda 或匿名函数，用起来差不多：传个函数进去，里面能访问外部变量，搞定。
 Rust 的闭包表面上也是这样，但背后的机制要复杂得多。Rust 需要在编译期确定闭包捕获了什么、以什么方式捕获，以及这个闭包能被调用几次——因为这直接关系到所有权和内存安全。
 理解闭包，核心是理解三件事：捕获方式、三个 Fn Trait、move 关键字。
 闭包长什么样 先认识一下 Rust 闭包的语法：
