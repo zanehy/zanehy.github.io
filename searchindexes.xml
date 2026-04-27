@@ -1,4 +1,12 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>14 | Rust 并发基础</title><url>/blog/rust-14-concurrency/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>并发</tag><tag>线程</tag><tag>Mutex</tag><tag>Channel</tag><tag>Send</tag><tag>Sync</tag></tags><content type="html"><![CDATA[  Go 有一句名言：&amp;ldquo;不要通过共享内存来通信，而要通过通信来共享内存。&amp;ldquo;这句话出现的原因，是因为共享内存并发太容易出错——数据竞争、死锁、忘记加锁，这些 bug 在 C/C++ 里困扰了程序员几十年。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>15 | Rust 异步编程基础</title><url>/blog/rust-15-async-basics/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>异步</tag><tag>async</tag><tag>await</tag><tag>Future</tag><tag>Tokio</tag></tags><content type="html"><![CDATA[  上一篇我们聊了 Rust 的并发基础：线程、Mutex、Channel。那是&amp;quot;多线程&amp;quot;模型的并发——每个任务跑在独立线程上，操作系统负责调度。这套模型对 CPU 密集型任务很合适，但一旦遇到大量 I/O——网络请求、数据库查询、文件读写——就会遇到麻烦。
+为什么需要 async 先看一个具体场景。假设你要同时处理 10000 个 HTTP 连接，每个连接大部分时间在等待客户端发数据。如果每个连接创建一个线程，就需要 10000 个线程。
+问题在哪？线程不便宜。每个线程默认有几 MB 的栈空间，10000 个线程光内存就要几十 GB。更要命的是线程切换有开销——操作系统在线程间切换时要保存和恢复寄存器、切换内存上下文，这些开销在高并发时会显著拖慢系统。
+Go 用 goroutine 解决这个问题：goroutine 是用户态轻量级线程，几十 KB 起步，运行时负责调度，可以轻松开百万个。Python 的 asyncio 也是类似思路——用协程避免线程开销。
+Rust 的 async/await 走的是同一条路，但实现方式更底层、更零成本。理解它的关键是 Future Trait。
+Future Trait：异步的核心抽象 Rust 标准库中 Future 的定义非常简单：
+pub trait Future { type Output; fn poll(self: Pin&amp;lt;&amp;amp;mut Self&amp;gt;, cx: &amp;amp;mut Context&amp;lt;&amp;#39;_&amp;gt;) -&amp;gt; Poll&amp;lt;Self::Output&amp;gt;; } pub enum Poll&amp;lt;T&amp;gt; { Ready(T), Pending, } 这就是 Rust 异步的本质：一个可以被&amp;quot;轮询&amp;quot;的对象。每次调用 poll，它要么返回 Ready(值)（任务完成了），要么返回 Pending（还没好，待会再来）。
+用餐厅取餐类比：你点了餐，服务员给你一个取餐号（Future）。你可以去问&amp;quot;好了吗？&amp;quot;（poll）。如果好了，拿走；没好，回去等。与其一直站在窗口等（阻塞），不如去做别的事，等被叫到再来（异步）。
+Context 里包含一个 Waker——当 Future 准备好时，它会调用 waker.wake() 通知 …  ]]></content></entry><entry><title>14 | Rust 并发基础</title><url>/blog/rust-14-concurrency/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>并发</tag><tag>线程</tag><tag>Mutex</tag><tag>Channel</tag><tag>Send</tag><tag>Sync</tag></tags><content type="html"><![CDATA[  Go 有一句名言：&amp;ldquo;不要通过共享内存来通信，而要通过通信来共享内存。&amp;ldquo;这句话出现的原因，是因为共享内存并发太容易出错——数据竞争、死锁、忘记加锁，这些 bug 在 C/C++ 里困扰了程序员几十年。
 Rust 的答案更激进：在编译期就消灭数据竞争。不是靠运行时检测，不是靠程序员自律，而是让编译器拒绝编译任何可能产生数据竞争的代码。
 这一切的底气来自所有权系统——那两个神秘的 Trait：Send 和 Sync。
 Send 和 Sync：并发安全的编译期保证 Send 和 Sync 是 Rust 标准库里最简单也最重要的两个 Trait，它们没有任何方法，纯粹是标记：
