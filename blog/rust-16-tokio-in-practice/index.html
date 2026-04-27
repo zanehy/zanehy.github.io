@@ -1,0 +1,377 @@
+<!doctype html><html lang=zh-CN data-theme=dark><head><meta charset=UTF-8><meta name=viewport content="width=device-width"><meta name=theme-color content="#222" media="(prefers-color-scheme: dark)"><meta name=generator content="Hugo 0.123.7"><link rel="shortcut icon" type=image/x-icon href=/imgs/icons/zanehy.ico><link rel=icon type=image/x-icon href=/imgs/icons/zanehy.ico><link rel=icon type=image/png sizes=16x16 href=/imgs/icons/zanehy_16x16.jpg><link rel=icon type=image/png sizes=32x32 href=/imgs/icons/zanehy_32_32.jpg><link rel=apple-touch-icon sizes=180x180 href=/imgs/zanehy.jpg><meta itemprop=name content="16 | Tokio 实战"><meta itemprop=description content><meta itemprop=datePublished zgotmplz><meta itemprop=dateModified zgotmplz><meta itemprop=image content="https://zanehy.github.io/imgs/zanehy.jpg"><meta itemprop=keywords content="Rust,Tokio,异步,并发,select,spawn"><meta property="og:type" content="article"><meta property="og:title" content="16 | Tokio 实战"><meta property="og:description" content><meta property="og:image" content="/imgs/zanehy.jpg"><meta property="og:image:width" content="312"><meta property="og:image:height" content="312"><meta property="og:image:type" content="image/jpeg/png/svg/jpg"><meta property="og:url" content="https://zanehy.github.io/blog/rust-16-tokio-in-practice/"><meta property="og:site_name" content="红岩 | 个人博客"><meta property="og:locale" content="zh-CN"><meta property="article:author" content="红岩"><meta property="article:published_time" content="2026-04-27 16:00:00 +0800 CST"><meta property="article:modified_time" content="2026-04-27 16:00:00 +0800 CST"><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/font-awesome/6.1.2/css/all.min.css><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/animate.css/3.1.1/animate.min.css><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/viewerjs/1.11.0/viewer.min.css><link rel=stylesheet href=/css/main.min.33a74da2976ebbac6b4f1852845dfaad330b3fbd6c4e4b31ec4820969c3d5038.css><script type=text/javascript>(function(){localDB={set:function(e,t,n){if(n===0)return;const s=new Date,o=n*864e5,i={value:t,expiry:s.getTime()+o};localStorage.setItem(e,JSON.stringify(i))},get:function(e){const t=localStorage.getItem(e);if(!t)return void 0;const n=JSON.parse(t),s=new Date;return s.getTime()>n.expiry?(localStorage.removeItem(e),void 0):n.value}},theme={active:function(){const e=localDB.get("theme");if(e==null)return;theme.toggle(e),window.matchMedia("(prefers-color-scheme: dark)").addListener(function(e){theme.toggle(e.matches?"dark":"light")})},toggle:function(e){document.documentElement.setAttribute("data-theme",e),localDB.set("theme",e,2);const t=document.querySelector("iframe.giscus-frame");if(t){const n={setConfig:{theme:e}};t.contentWindow.postMessage({giscus:n},"https://giscus.app")}}},theme.active()})(window)</script><script class=next-config data-name=page type=application/json>{"comments":false,"isHome":false,"isPage":true,"path":"rust-16-tokio-in-practice","permalink":"https://zanehy.github.io/blog/rust-16-tokio-in-practice/","title":"16 | Tokio 实战","waline":{"js":[{"alias":"waline","alias_name":"@waline/client","file":"dist/pageview.js","name":"pageview","version":"2.13.0"},{"alias":"waline","alias_name":"@waline/client","file":"dist/comment.js","name":"comment","version":"2.13.0"}]}}</script><script type=text/javascript>document.addEventListener("DOMContentLoaded",()=>{var e=document.createElement("script");e.charset="UTF-8",e.src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js",e.async=!1,e.defer=!0,document.head.appendChild(e),e.onload=function(){NexT.utils.fmtBusuanzi()}})</script><title>16 | Tokio 实战 - 红岩 | 个人博客</title><noscript><link rel=stylesheet href=/css/noscript.css></noscript></head><body itemscope itemtype=http://schema.org/WebPage class=use-motion><div class=headband></div><main class=main><header class=header itemscope itemtype=http://schema.org/WPHeader><div class=header-inner><div class=site-brand-container><div class=site-nav-toggle><div class=toggle aria-label role=button><span class=toggle-line></span>
+<span class=toggle-line></span>
+<span class=toggle-line></span></div></div><div class=site-meta><a href=/ class=brand rel=start><i class=logo-line></i><h1 class=site-title>红岩 | 个人博客</h1><i class=logo-line></i></a><p class=site-subtitle itemprop=description>记录生活，记录成长</p></div><div class=site-nav-right><div class="toggle popup-trigger"><i class="fa fa-search fa-fw fa-lg"></i></div></div></div><nav class=site-nav><ul class="main-menu menu"><li class="menu-item menu-item-home"><a href=/ class=hvr-icon-pulse rel=section><i class="fa fa-home hvr-icon"></i>首页</a></li><li class="menu-item menu-item-about"><a href=/about.html class=hvr-icon-pulse rel=section><i class="fa fa-user hvr-icon"></i>关于</a></li><li class="menu-item menu-item-my_blog"><a href=/blog/ class=hvr-icon-pulse rel=section><i class="fa fa-blog hvr-icon"></i>技术博客</a></li><li class="menu-item menu-item-my_life"><a href=/life/ class=hvr-icon-pulse rel=section><i class="fa fa-pizza-slice hvr-icon"></i>生活点滴</a></li><li class="menu-item menu-item-archives"><a href=/archives/ class=hvr-icon-pulse rel=section><i class="fa fa-archive hvr-icon"></i>归档日志
+<span class=badge>49</span></a></li><li class="menu-item menu-item-search"><a role=button class="popup-trigger hvr-icon-pulse"><i class="fa fa-search fa-fw hvr-icon"></i>搜索</a></li></ul></nav><div class=search-pop-overlay><div class="popup search-popup"><div class=search-header><span class=search-icon><i class="fa fa-search"></i></span><div class=search-input-container><input autocomplete=off autocapitalize=off maxlength=80 placeholder=搜索... spellcheck=false type=search class=search-input></div><span class=popup-btn-close role=button><i class="fa fa-times-circle"></i></span></div><div class="search-result-container no-result"><div class=search-result-icon><i class="fa fa-spinner fa-pulse fa-5x"></i></div></div></div></div></div><div class="toggle sidebar-toggle" role=button><span class=toggle-line></span>
+<span class=toggle-line></span>
+<span class=toggle-line></span></div><aside class=sidebar><div class="sidebar-inner sidebar-nav-active sidebar-toc-active"><ul class=sidebar-nav><li class=sidebar-nav-toc>文章目录</li><li class=sidebar-nav-overview>站点概览</li></ul><div class=sidebar-panel-container><div class="post-toc-wrap sidebar-panel"><div class="post-toc animated"><nav id=TableOfContents><ul><li><a href=#spawn把任务丢给运行时>spawn：把任务丢给运行时</a></li><li><a href=#select同时等多个-future谁先完成处理谁>select!：同时等多个 Future，谁先完成处理谁</a></li><li><a href=#异步-channel任务间通信>异步 Channel：任务间通信</a><ul><li><a href=#mpsc多生产者单消费者>mpsc：多生产者单消费者</a></li><li><a href=#oneshot一次性通信>oneshot：一次性通信</a></li><li><a href=#broadcast广播给所有订阅者>broadcast：广播给所有订阅者</a></li></ul></li><li><a href=#stream异步版迭代器>Stream：异步版迭代器</a></li><li><a href=#spawn_blocking处理阻塞操作>spawn_blocking：处理阻塞操作</a></li><li><a href=#结构化并发让任务的生命周期有边界>结构化并发：让任务的生命周期有边界</a></li><li><a href=#综合示例一个完整的异步任务调度器>综合示例：一个完整的异步任务调度器</a></li><li><a href=#小结>小结</a></li></ul></nav></div></div><div class="site-overview-wrap sidebar-panel"><div class="site-author site-overview-item animated" itemprop=author itemscope itemtype=http://schema.org/Person><img class=site-author-image itemprop=image alt=红岩 src=/imgs/img-lazy-loading.gif data-src=/imgs/zanehy.jpg><p class=site-author-name itemprop=name>红岩</p><div class=site-description itemprop=description></div></div><div class="site-state-wrap site-overview-item animated"><nav class=site-state><div class="site-state-item site-state-posts"><a href=/archives/><span class=site-state-item-count>49</span>
+<span class=site-state-item-name>日志</span></a></div><div class="site-state-item site-state-categories"><a href=/categories/><span class=site-state-item-count>3</span>
+<span class=site-state-item-name>分类</span></a></div><div class="site-state-item site-state-tags"><a href=/tags/><span class=site-state-item-count>100</span>
+<span class=site-state-item-name>标签</span></a></div></nav></div><div class="links-of-social site-overview-item animated"></div></div></div></div><div id=siteinfo-card-widget class=sidebar-card-widget><div class=item-headline><i class="fas fa-chart-line"></i>
+<span>网站资讯</span></div><div class=siteinfo><div class=siteinfo-item><div class=item-name><i class="fa-solid fa-calendar-check"></i>已运行：</div><div class=item-count id=runTimes data-publishdate=2026-03-04T17:00:00+08:00></div></div><div class=siteinfo-item><div class=item-name><i class="fas fa fa-user"></i>总访客数：</div><div class=item-count id=busuanzi_value_site_uv><i class="fa fa-sync fa-spin"></i></div></div><div class=siteinfo-item><div class=item-name><i class="fas fa fa-eye"></i>页面浏览：</div><div class=item-count id=busuanzi_value_site_pv><i class="fa fa-sync fa-spin"></i></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-font"></i>总字数：</div><div class=item-count id=wordsCount data-count=120573></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-mug-hot"></i>阅读约：</div><div class=item-count id=readTimes data-times=269></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-clock-rotate-left"></i>最后更新于：</div><div class=item-count id=last-push-date data-lastpushdate=2026-04-27T16:00:00+08:00></div></div></div></div></aside><div class=sidebar-dimmer></div></header><div class=tool-buttons><div id=toggle-theme class=button title=深浅模式切换><i class="fas fa-adjust"></i></div><div class=back-to-top role=button title=返回顶部><i class="fa fa-arrow-up"></i>
+<span>0%</span></div></div><div class=reading-progress-bar></div><a role=button class="book-mark-link book-mark-link-fixed"></a><a href=https://github.com/zanehy rel="noopener external nofollow noreferrer" target=_blank title="Follow me on GitHub" class="exturl github-corner"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0 0 115 115h15l12 27L250 250V0z"/><path d="M128.3 109C113.8 99.7 119 89.6 119 89.6 122 82.7 120.5 78.6 120.5 78.6 119.2 72 123.4 76.3 123.4 76.3 127.3 80.9 125.5 87.3 125.5 87.3 122.9 97.6 130.6 101.9 134.4 103.2" fill="currentcolor" style="transform-origin:130px 106px" class="octo-arm"/><path d="M115 115C114.9 115.1 118.7 116.5 119.8 115.4l13.9-13.8C136.9 99.2 139.9 98.4 142.2 98.6 133.8 88 127.5 74.4 143.8 58 148.5 53.4 154 51.2 159.7 51 160.3 49.4 163.2 43.6 171.4 40.1 171.4 40.1 176.1 42.5 178.8 56.2 183.1 58.6 187.2 61.8 190.9 65.4 194.5 69 197.7 73.2 200.1 77.6 213.8 80.2 216.3 84.9 216.3 84.9 212.7 93.1 206.9 96 205.4 96.6 205.1 102.4 203 107.8 198.3 112.5 181.9 128.9 168.3 122.5 157.7 114.1 157.9 116.9 156.7 120.9 152.7 124.9L141 136.5C139.8 137.7 141.6 141.9 141.8 141.8z" fill="currentcolor" class="octo-body"/></svg>
+</a><script type=text/javascript src=//sidecar.gitter.im/dist/sidecar.v1.js async></script><script type=text/javascript>((window.gitter={}).chat={}).options={room:"hugo-next/community"}</script><noscript><div class=noscript-warning>Theme NexT works best with JavaScript enabled</div></noscript><div class="main-inner post posts-expand"><div class=post-block><article itemscope itemtype=http://schema.org/Article class=post-content lang><link itemprop=mainEntityOfPage href=https://zanehy.github.io/blog/rust-16-tokio-in-practice/><span hidden itemprop=author itemscope itemtype=http://schema.org/Person><meta itemprop=image content="/imgs/zanehy.jpg"><meta itemprop=name content="红岩"></span><span hidden itemprop=publisher itemscope itemtype=http://schema.org/Organization><meta itemprop=name content="红岩"><meta itemprop=description content></span><span hidden itemprop=post itemscope itemtype=http://schema.org/CreativeWork><meta itemprop=name content="16 | Tokio 实战"><meta itemprop=description content="上一篇我们把异步的底层原理讲清楚了：Future 是状态机，poll 驱动执行，.await 是暂停点，Tokio 是运行时引擎。理论有了，这篇进入"></span><header class=post-header><h1 class=post-title itemprop="name headline">16 | Tokio 实战</h1><div class=post-meta-container><div class=post-meta-items><span class=post-meta-item><span class=post-meta-item-icon><i class="far fa-calendar"></i>
+</span><span class=post-meta-item-text title=发表于>发表于：
+</span><time title="创建时间：2026-04-27 16:00:00 +0800 CST" itemprop="dateCreated datePublished" datetime="2026-04-27 16:00:00 +0800 CST">2026-04-27
+</time></span><span class=post-meta-item><span class=post-meta-item-icon><i class="far fa-folder-open"></i>
+</span><span class=post-meta-item-text title=分类于>分类于：
+</span><span itemprop=about itemscope itemtype=http://schema.org/Thing><a href=/categories/rust itemprop=url rel=index><span itemprop=name>Rust</span></a></span></span></div><div class=post-meta-items><span class=post-meta-item title=字数><span class=post-meta-item-icon><i class="far fa-file-word"></i>
+</span><span class=post-meta-item-text>字数：</span>
+<span>3767</span>
+</span><span class=post-meta-item title=阅读><span class=post-meta-item-icon><i class="far fa-clock"></i>
+</span><span class=post-meta-item-text>阅读：&ap;</span>
+<span>8分钟</span>
+</span><span class=post-meta-item title=浏览><span class=post-meta-item-icon><i class="far fa-eye"></i>
+</span><span class=post-meta-item-text>浏览：
+</span><span id=busuanzi_value_page_pv data-path=/blog/rust-16-tokio-in-practice/><i class="fa fa-sync fa-spin"></i></span></span></div></div></header><div class="post-body autonumber" itemprop=articleBody><p>上一篇我们把异步的底层原理讲清楚了：<code>Future</code> 是状态机，<code>poll</code> 驱动执行，<code>.await</code> 是暂停点，Tokio 是运行时引擎。理论有了，这篇进入实战——Tokio 最常用的 API 怎么用，什么时候用，踩过哪些坑。</p><h2 id=spawn把任务丢给运行时>spawn：把任务丢给运行时
+<a class=header-anchor href=#spawn%e6%8a%8a%e4%bb%bb%e5%8a%a1%e4%b8%a2%e7%bb%99%e8%bf%90%e8%a1%8c%e6%97%b6></a></h2><p><code>tokio::spawn</code> 是最常用的 API，作用是把一个 async 任务提交给 Tokio 调度器，在后台运行。类比 Go 里的 <code>go func()</code>，或者线程池的 <code>submit</code>。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio::time::{sleep, Duration};
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#[tokio::main]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// spawn 立刻返回一个 JoinHandle，任务在后台运行
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> handle <span style=color:#f92672>=</span> tokio::spawn(<span style=color:#66d9ef>async</span> {
+</span></span><span style=display:flex><span>        sleep(Duration::from_millis(<span style=color:#ae81ff>100</span>)).<span style=color:#66d9ef>await</span>;
+</span></span><span style=display:flex><span>        println!(<span style=color:#e6db74>&#34;任务完成&#34;</span>);
+</span></span><span style=display:flex><span>        <span style=color:#ae81ff>42</span> <span style=color:#75715e>// 返回值
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;主流程继续执行，不等任务&#34;</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 等待任务结束，拿到返回值
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> result <span style=color:#f92672>=</span> handle.<span style=color:#66d9ef>await</span>.unwrap();
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;任务返回值: </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, result);
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p><strong>JoinHandle 的两个用途：</strong></p><ol><li>等待任务完成（<code>.await</code>）</li><li>取消任务（<code>.abort()</code>）</li></ol><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>let</span> handle <span style=color:#f92672>=</span> tokio::spawn(<span style=color:#66d9ef>async</span> {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>loop</span> {
+</span></span><span style=display:flex><span>        sleep(Duration::from_secs(<span style=color:#ae81ff>1</span>)).<span style=color:#66d9ef>await</span>;
+</span></span><span style=display:flex><span>        println!(<span style=color:#e6db74>&#34;还在跑...&#34;</span>);
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>});
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>sleep(Duration::from_secs(<span style=color:#ae81ff>3</span>)).<span style=color:#66d9ef>await</span>;
+</span></span><span style=display:flex><span>handle.abort(); <span style=color:#75715e>// 取消任务
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>println!(<span style=color:#e6db74>&#34;任务已取消&#34;</span>);
+</span></span></code></pre></div><p><strong>所有权问题：</strong> <code>spawn</code> 要求 Future 是 <code>'static + Send</code>。意思是闭包不能借用外部的非 <code>'static</code> 引用，需要用 <code>move</code> 转移所有权，或者用 <code>Arc</code> 共享。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>let</span> data <span style=color:#f92672>=</span> String::from(<span style=color:#e6db74>&#34;hello&#34;</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// 错误：data 是借用，不满足 &#39;static
+</span></span></span><span style=display:flex><span><span style=color:#75715e>// tokio::spawn(async { println!(&#34;{}&#34;, data); });
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// 正确：move 转移所有权
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>tokio::spawn(<span style=color:#66d9ef>async</span> <span style=color:#66d9ef>move</span> {
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, data);
+</span></span><span style=display:flex><span>});
+</span></span></code></pre></div><h2 id=select同时等多个-future谁先完成处理谁>select!：同时等多个 Future，谁先完成处理谁
+<a class=header-anchor href=#select%e5%90%8c%e6%97%b6%e7%ad%89%e5%a4%9a%e4%b8%aa-future%e8%b0%81%e5%85%88%e5%ae%8c%e6%88%90%e5%a4%84%e7%90%86%e8%b0%81></a></h2><p><code>select!</code> 是 Tokio 里最有意思的宏，没有之一。它的语义是：同时驱动多个 Future，哪个先完成就执行对应分支，其余的丢弃。</p><p>类比：你在等快递，同时在等外卖——谁先到门，你先处理谁。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio::time::{sleep, Duration};
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#[tokio::main]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> task1 <span style=color:#f92672>=</span> sleep(Duration::from_millis(<span style=color:#ae81ff>200</span>));
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> task2 <span style=color:#f92672>=</span> sleep(Duration::from_millis(<span style=color:#ae81ff>100</span>));
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    tokio::select! {
+</span></span><span style=display:flex><span>        _ <span style=color:#f92672>=</span> task1 <span style=color:#f92672>=&gt;</span> println!(<span style=color:#e6db74>&#34;task1 先完成&#34;</span>),
+</span></span><span style=display:flex><span>        _ <span style=color:#f92672>=</span> task2 <span style=color:#f92672>=&gt;</span> println!(<span style=color:#e6db74>&#34;task2 先完成&#34;</span>), <span style=color:#75715e>// 这个会先触发
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p><strong>实际场景：超时控制</strong></p><p>这是 <code>select!</code> 最高频的用法——给任何 async 操作加超时：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio::time::{sleep, timeout, Duration};
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>fetch_data</span>() -&gt; String {
+</span></span><span style=display:flex><span>    sleep(Duration::from_secs(<span style=color:#ae81ff>5</span>)).<span style=color:#66d9ef>await</span>; <span style=color:#75715e>// 模拟慢请求
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#e6db74>&#34;数据&#34;</span>.to_string()
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#[tokio::main]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 方式一：tokio::time::timeout 包装（推荐）
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>match</span> timeout(Duration::from_secs(<span style=color:#ae81ff>2</span>), fetch_data()).<span style=color:#66d9ef>await</span> {
+</span></span><span style=display:flex><span>        Ok(data) <span style=color:#f92672>=&gt;</span> println!(<span style=color:#e6db74>&#34;拿到数据: </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, data),
+</span></span><span style=display:flex><span>        Err(_) <span style=color:#f92672>=&gt;</span> println!(<span style=color:#e6db74>&#34;请求超时&#34;</span>),
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 方式二：select! + sleep
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    tokio::select! {
+</span></span><span style=display:flex><span>        data <span style=color:#f92672>=</span> fetch_data() <span style=color:#f92672>=&gt;</span> println!(<span style=color:#e6db74>&#34;拿到: </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, data),
+</span></span><span style=display:flex><span>        _ <span style=color:#f92672>=</span> sleep(Duration::from_secs(<span style=color:#ae81ff>2</span>)) <span style=color:#f92672>=&gt;</span> println!(<span style=color:#e6db74>&#34;超时了&#34;</span>),
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p><strong>实际场景：优雅关闭</strong></p><p>配合 <code>tokio::signal</code>，<code>select!</code> 可以优雅地处理 Ctrl+C 信号：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio::signal;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#[tokio::main]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    tokio::select! {
+</span></span><span style=display:flex><span>        _ <span style=color:#f92672>=</span> main_logic() <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>            println!(<span style=color:#e6db74>&#34;主逻辑完成&#34;</span>);
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>        _ <span style=color:#f92672>=</span> signal::ctrl_c() <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>            println!(<span style=color:#e6db74>&#34;收到 Ctrl+C，开始优雅关闭...&#34;</span>);
+</span></span><span style=display:flex><span>            <span style=color:#75715e>// 清理资源
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>        }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main_logic</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 主业务逻辑
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    tokio::time::sleep(tokio::time::Duration::from_secs(<span style=color:#ae81ff>60</span>)).<span style=color:#66d9ef>await</span>;
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p><strong>select! 的注意事项：</strong></p><p><code>select!</code> 默认随机选择先完成的分支（当多个同时 Ready 时），这避免了饥饿问题。但要注意：未被选中的 Future 会被<strong>丢弃</strong>，如果这个 Future 内部有状态，下次重新进入 <code>select!</code> 会重新开始。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#75715e>// 错误用法：每次循环重新创建 sleep，导致永远不会超时
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>loop</span> {
+</span></span><span style=display:flex><span>    tokio::select! {
+</span></span><span style=display:flex><span>        msg <span style=color:#f92672>=</span> receiver.recv() <span style=color:#f92672>=&gt;</span> { <span style=color:#75715e>/* 处理消息 */</span> }
+</span></span><span style=display:flex><span>        _ <span style=color:#f92672>=</span> sleep(Duration::from_secs(<span style=color:#ae81ff>10</span>)) <span style=color:#f92672>=&gt;</span> { <span style=color:#75715e>/* 超时 */</span> } <span style=color:#75715e>// 每次都重新计时！
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    }
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>// 正确用法：在循环外创建，或用 tokio::time::interval
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>let</span> sleep_future <span style=color:#f92672>=</span> sleep(Duration::from_secs(<span style=color:#ae81ff>10</span>));
+</span></span><span style=display:flex><span>tokio::pin!(sleep_future);
+</span></span><span style=display:flex><span><span style=color:#66d9ef>loop</span> {
+</span></span><span style=display:flex><span>    tokio::select! {
+</span></span><span style=display:flex><span>        msg <span style=color:#f92672>=</span> receiver.recv() <span style=color:#f92672>=&gt;</span> { <span style=color:#75715e>/* 处理消息 */</span> }
+</span></span><span style=display:flex><span>        _ <span style=color:#f92672>=</span> <span style=color:#f92672>&amp;</span><span style=color:#66d9ef>mut</span> sleep_future <span style=color:#f92672>=&gt;</span> { <span style=color:#75715e>/* 真正的超时 */</span> }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h2 id=异步-channel任务间通信>异步 Channel：任务间通信
+<a class=header-anchor href=#%e5%bc%82%e6%ad%a5-channel%e4%bb%bb%e5%8a%a1%e9%97%b4%e9%80%9a%e4%bf%a1></a></h2><p>线程间通信用 <code>std::sync::mpsc</code>，异步任务间通信用 <code>tokio::sync</code> 里的 Channel 家族。</p><h3 id=mpsc多生产者单消费者>mpsc：多生产者单消费者
+<a class=header-anchor href=#mpsc%e5%a4%9a%e7%94%9f%e4%ba%a7%e8%80%85%e5%8d%95%e6%b6%88%e8%b4%b9%e8%80%85></a></h3><p>最常用的一种，适合"多个任务往一个队列里塞消息，一个任务处理"的场景：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio::sync::mpsc;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#[tokio::main]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 创建 channel，缓冲区大小 32
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> (tx, <span style=color:#66d9ef>mut</span> rx) <span style=color:#f92672>=</span> mpsc::channel::<span style=color:#f92672>&lt;</span>String<span style=color:#f92672>&gt;</span>(<span style=color:#ae81ff>32</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 多个生产者
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>for</span> i <span style=color:#66d9ef>in</span> <span style=color:#ae81ff>0</span><span style=color:#f92672>..</span><span style=color:#ae81ff>3</span> {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> tx <span style=color:#f92672>=</span> tx.clone();
+</span></span><span style=display:flex><span>        tokio::spawn(<span style=color:#66d9ef>async</span> <span style=color:#66d9ef>move</span> {
+</span></span><span style=display:flex><span>            tx.send(format!(<span style=color:#e6db74>&#34;消息 </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, i)).<span style=color:#66d9ef>await</span>.unwrap();
+</span></span><span style=display:flex><span>        });
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 关闭原始发送端，让接收端知道何时结束
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    drop(tx);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 消费者接收所有消息
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>while</span> <span style=color:#66d9ef>let</span> Some(msg) <span style=color:#f92672>=</span> rx.recv().<span style=color:#66d9ef>await</span> {
+</span></span><span style=display:flex><span>        println!(<span style=color:#e6db74>&#34;收到: </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, msg);
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;所有消息处理完毕&#34;</span>);
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p><strong>关键点：</strong> 当所有 <code>tx</code>（包括 clone 出来的）都被 drop 时，<code>rx.recv()</code> 返回 <code>None</code>，循环自然结束。</p><h3 id=oneshot一次性通信>oneshot：一次性通信
+<a class=header-anchor href=#oneshot%e4%b8%80%e6%ac%a1%e6%80%a7%e9%80%9a%e4%bf%a1></a></h3><p>适合"发出请求，等待一次回复"的场景，比如 RPC：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio::sync::oneshot;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>compute</span>(tx: <span style=color:#a6e22e>oneshot</span>::Sender<span style=color:#f92672>&lt;</span><span style=color:#66d9ef>i32</span><span style=color:#f92672>&gt;</span>) {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> result <span style=color:#f92672>=</span> <span style=color:#ae81ff>42</span>;
+</span></span><span style=display:flex><span>    tx.send(result).unwrap(); <span style=color:#75715e>// 只能发一次
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#[tokio::main]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> (tx, rx) <span style=color:#f92672>=</span> oneshot::channel();
+</span></span><span style=display:flex><span>    tokio::spawn(compute(tx));
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> result <span style=color:#f92672>=</span> rx.<span style=color:#66d9ef>await</span>.unwrap();
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;计算结果: </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, result);
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h3 id=broadcast广播给所有订阅者>broadcast：广播给所有订阅者
+<a class=header-anchor href=#broadcast%e5%b9%bf%e6%92%ad%e7%bb%99%e6%89%80%e6%9c%89%e8%ae%a2%e9%98%85%e8%80%85></a></h3><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio::sync::broadcast;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#[tokio::main]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> (tx, <span style=color:#66d9ef>mut</span> rx1) <span style=color:#f92672>=</span> broadcast::channel::<span style=color:#f92672>&lt;</span>String<span style=color:#f92672>&gt;</span>(<span style=color:#ae81ff>16</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> rx2 <span style=color:#f92672>=</span> tx.subscribe();
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    tx.send(<span style=color:#e6db74>&#34;广播消息&#34;</span>.to_string()).unwrap();
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;rx1 收到: </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, rx1.recv().<span style=color:#66d9ef>await</span>.unwrap());
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;rx2 收到: </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, rx2.recv().<span style=color:#66d9ef>await</span>.unwrap());
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h2 id=stream异步版迭代器>Stream：异步版迭代器
+<a class=header-anchor href=#stream%e5%bc%82%e6%ad%a5%e7%89%88%e8%bf%ad%e4%bb%a3%e5%99%a8></a></h2><p><code>Iterator</code> 是同步的，你调用 <code>next()</code> 立刻拿到下一个值。<code>Stream</code> 是异步的，<code>next()</code> 返回一个 Future，可能需要等待。</p><p>类比：<code>Iterator</code> 像从内存数组取数据，<code>Stream</code> 像从网络流接收数据包——每个包什么时候到你不知道。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio_stream::{self <span style=color:#66d9ef>as</span> stream, StreamExt};
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#[tokio::main]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 从 Vec 创建 Stream
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> s <span style=color:#f92672>=</span> stream::iter(vec![<span style=color:#ae81ff>1</span>, <span style=color:#ae81ff>2</span>, <span style=color:#ae81ff>3</span>, <span style=color:#ae81ff>4</span>, <span style=color:#ae81ff>5</span>]);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>while</span> <span style=color:#66d9ef>let</span> Some(val) <span style=color:#f92672>=</span> s.next().<span style=color:#66d9ef>await</span> {
+</span></span><span style=display:flex><span>        println!(<span style=color:#e6db74>&#34;收到: </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, val);
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p><strong>StreamExt 提供的常用方法：</strong></p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio_stream::{self <span style=color:#66d9ef>as</span> stream, StreamExt};
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#[tokio::main]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> s <span style=color:#f92672>=</span> stream::iter(vec![<span style=color:#ae81ff>1</span>, <span style=color:#ae81ff>2</span>, <span style=color:#ae81ff>3</span>, <span style=color:#ae81ff>4</span>, <span style=color:#ae81ff>5</span>]);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// map + filter + collect
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> result: Vec<span style=color:#f92672>&lt;</span><span style=color:#66d9ef>i32</span><span style=color:#f92672>&gt;</span> <span style=color:#f92672>=</span> s
+</span></span><span style=display:flex><span>        .filter(<span style=color:#f92672>|</span>x<span style=color:#f92672>|</span> std::future::ready(<span style=color:#f92672>*</span>x <span style=color:#f92672>%</span> <span style=color:#ae81ff>2</span> <span style=color:#f92672>==</span> <span style=color:#ae81ff>0</span>))
+</span></span><span style=display:flex><span>        .map(<span style=color:#f92672>|</span>x<span style=color:#f92672>|</span> x <span style=color:#f92672>*</span> <span style=color:#ae81ff>10</span>)
+</span></span><span style=display:flex><span>        .collect()
+</span></span><span style=display:flex><span>        .<span style=color:#66d9ef>await</span>;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{:?}</span><span style=color:#e6db74>&#34;</span>, result); <span style=color:#75715e>// [20, 40]
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span></code></pre></div><p><strong>实际场景：处理 mpsc channel 作为 Stream</strong></p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio::sync::mpsc;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio_stream::wrappers::ReceiverStream;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio_stream::StreamExt;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#[tokio::main]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> (tx, rx) <span style=color:#f92672>=</span> mpsc::channel::<span style=color:#f92672>&lt;</span><span style=color:#66d9ef>i32</span><span style=color:#f92672>&gt;</span>(<span style=color:#ae81ff>32</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    tokio::spawn(<span style=color:#66d9ef>async</span> <span style=color:#66d9ef>move</span> {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>for</span> i <span style=color:#66d9ef>in</span> <span style=color:#ae81ff>0</span><span style=color:#f92672>..</span><span style=color:#ae81ff>5</span> {
+</span></span><span style=display:flex><span>            tx.send(i).<span style=color:#66d9ef>await</span>.unwrap();
+</span></span><span style=display:flex><span>            tokio::time::sleep(tokio::time::Duration::from_millis(<span style=color:#ae81ff>100</span>)).<span style=color:#66d9ef>await</span>;
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 把 receiver 包装成 Stream
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> stream <span style=color:#f92672>=</span> ReceiverStream::new(rx);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>while</span> <span style=color:#66d9ef>let</span> Some(val) <span style=color:#f92672>=</span> stream.next().<span style=color:#66d9ef>await</span> {
+</span></span><span style=display:flex><span>        println!(<span style=color:#e6db74>&#34;Stream 收到: </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, val);
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h2 id=spawn_blocking处理阻塞操作>spawn_blocking：处理阻塞操作
+<a class=header-anchor href=#spawn_blocking%e5%a4%84%e7%90%86%e9%98%bb%e5%a1%9e%e6%93%8d%e4%bd%9c></a></h2><p>这是一个经常被忽视但非常重要的 API。</p><p>Tokio 的工作线程数量有限（默认等于 CPU 核数），如果你在 async 函数里做了一个阻塞操作（比如调用同步库、做复杂计算），这个线程就被占住了，其他 async 任务无法调度，整个运行时会卡住。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#75715e>// 错误：在 async 函数里做阻塞计算
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>bad_example</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> result <span style=color:#f92672>=</span> (<span style=color:#ae81ff>0</span><span style=color:#f92672>..</span><span style=color:#ae81ff>100_000_000_</span><span style=color:#66d9ef>u64</span>).sum::<span style=color:#f92672>&lt;</span><span style=color:#66d9ef>u64</span><span style=color:#f92672>&gt;</span>(); <span style=color:#75715e>// 阻塞几百毫秒
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, result);
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 这期间，这个工作线程上的所有其他任务都被卡住了
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>}
+</span></span></code></pre></div><p><code>spawn_blocking</code> 把阻塞任务扔到专用的阻塞线程池（与 async 工作线程分开），不占用 async 调度资源：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#75715e>#[tokio::main]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 正确：把阻塞操作移到阻塞线程池
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> result <span style=color:#f92672>=</span> tokio::task::spawn_blocking(<span style=color:#f92672>||</span> {
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// 这里可以安全地做阻塞操作
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>        (<span style=color:#ae81ff>0</span><span style=color:#f92672>..</span><span style=color:#ae81ff>100_000_000_</span><span style=color:#66d9ef>u64</span>).sum::<span style=color:#f92672>&lt;</span><span style=color:#66d9ef>u64</span><span style=color:#f92672>&gt;</span>()
+</span></span><span style=display:flex><span>    })
+</span></span><span style=display:flex><span>    .<span style=color:#66d9ef>await</span>
+</span></span><span style=display:flex><span>    .unwrap();
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;计算结果: </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, result);
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p><strong>什么时候用 spawn_blocking？</strong></p><ul><li>调用同步 I/O（老式文件操作、某些数据库驱动）</li><li>CPU 密集型计算（加密、压缩、图像处理）</li><li>调用不支持 async 的第三方库</li><li><code>std::sync::Mutex</code> 的加锁（如果持锁时间长）</li></ul><p><strong>决策树：</strong></p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-fallback data-lang=fallback><span style=display:flex><span>是否需要等待 I/O？
+</span></span><span style=display:flex><span>  ├─ 是 → 用 tokio 的异步 I/O（tokio::fs, tokio::net）
+</span></span><span style=display:flex><span>  └─ 否（CPU 计算 or 同步阻塞）→ 用 spawn_blocking
+</span></span></code></pre></div><h2 id=结构化并发让任务的生命周期有边界>结构化并发：让任务的生命周期有边界
+<a class=header-anchor href=#%e7%bb%93%e6%9e%84%e5%8c%96%e5%b9%b6%e5%8f%91%e8%ae%a9%e4%bb%bb%e5%8a%a1%e7%9a%84%e7%94%9f%e5%91%bd%e5%91%a8%e6%9c%9f%e6%9c%89%e8%be%b9%e7%95%8c></a></h2><p>&ldquo;结构化并发&rdquo;（Structured Concurrency）是一个设计思想：<strong>任务的生命周期应该被明确的边界约束，不应该有游离的后台任务</strong>。</p><p>Go 语言的 goroutine 是"自由的"——你可以随时 <code>go func()</code> 启动一个任务，然后完全忘掉它，这会导致泄漏和竞争。Tokio 的 <code>JoinSet</code> 提供了结构化并发的基础设施：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio::task::JoinSet;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#[tokio::main]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> set <span style=color:#f92672>=</span> JoinSet::new();
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 启动多个任务
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>for</span> i <span style=color:#66d9ef>in</span> <span style=color:#ae81ff>0</span><span style=color:#f92672>..</span><span style=color:#ae81ff>5</span> {
+</span></span><span style=display:flex><span>        set.spawn(<span style=color:#66d9ef>async</span> <span style=color:#66d9ef>move</span> {
+</span></span><span style=display:flex><span>            tokio::time::sleep(tokio::time::Duration::from_millis(i <span style=color:#f92672>*</span> <span style=color:#ae81ff>100</span>)).<span style=color:#66d9ef>await</span>;
+</span></span><span style=display:flex><span>            format!(<span style=color:#e6db74>&#34;任务 </span><span style=color:#e6db74>{}</span><span style=color:#e6db74> 完成&#34;</span>, i)
+</span></span><span style=display:flex><span>        });
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 按完成顺序收集结果
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>while</span> <span style=color:#66d9ef>let</span> Some(result) <span style=color:#f92672>=</span> set.join_next().<span style=color:#66d9ef>await</span> {
+</span></span><span style=display:flex><span>        println!(<span style=color:#e6db74>&#34;</span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, result.unwrap());
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>    println!(<span style=color:#e6db74>&#34;所有任务完成&#34;</span>);
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p><strong>JoinSet 的优势：</strong></p><ul><li>当 <code>JoinSet</code> 被 drop 时，所有未完成的任务自动取消——不会泄漏</li><li>可以方便地等待"所有完成"或"任意一个完成"</li><li>任务数量动态可控</li></ul><p><strong>结合超时的完整模式：</strong></p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio::task::JoinSet;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio::time::{timeout, Duration};
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>fetch</span>(id: <span style=color:#66d9ef>u32</span>) -&gt; String {
+</span></span><span style=display:flex><span>    tokio::time::sleep(Duration::from_millis(id <span style=color:#66d9ef>as</span> <span style=color:#66d9ef>u64</span> <span style=color:#f92672>*</span> <span style=color:#ae81ff>200</span>)).<span style=color:#66d9ef>await</span>;
+</span></span><span style=display:flex><span>    format!(<span style=color:#e6db74>&#34;数据 </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, id)
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#[tokio::main]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> set <span style=color:#f92672>=</span> JoinSet::new();
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> i <span style=color:#66d9ef>in</span> <span style=color:#ae81ff>1</span><span style=color:#f92672>..=</span><span style=color:#ae81ff>5</span> {
+</span></span><span style=display:flex><span>        set.spawn(<span style=color:#66d9ef>async</span> <span style=color:#66d9ef>move</span> {
+</span></span><span style=display:flex><span>            timeout(Duration::from_millis(<span style=color:#ae81ff>500</span>), fetch(i)).<span style=color:#66d9ef>await</span>
+</span></span><span style=display:flex><span>        });
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>while</span> <span style=color:#66d9ef>let</span> Some(result) <span style=color:#f92672>=</span> set.join_next().<span style=color:#66d9ef>await</span> {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>match</span> result.unwrap() {
+</span></span><span style=display:flex><span>            Ok(data) <span style=color:#f92672>=&gt;</span> println!(<span style=color:#e6db74>&#34;成功: </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, data),
+</span></span><span style=display:flex><span>            Err(_) <span style=color:#f92672>=&gt;</span> println!(<span style=color:#e6db74>&#34;超时&#34;</span>),
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h2 id=综合示例一个完整的异步任务调度器>综合示例：一个完整的异步任务调度器
+<a class=header-anchor href=#%e7%bb%bc%e5%90%88%e7%a4%ba%e4%be%8b%e4%b8%80%e4%b8%aa%e5%ae%8c%e6%95%b4%e7%9a%84%e5%bc%82%e6%ad%a5%e4%bb%bb%e5%8a%a1%e8%b0%83%e5%ba%a6%e5%99%a8></a></h2><p>把本篇所有知识点串起来，实现一个简单的任务调度器：支持并发执行、超时控制、优雅关闭。</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio::sync::mpsc;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio::task::JoinSet;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio::time::{timeout, Duration};
+</span></span><span style=display:flex><span><span style=color:#66d9ef>use</span> tokio::signal;
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#[derive(Debug)]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>struct</span> <span style=color:#a6e22e>Task</span> {
+</span></span><span style=display:flex><span>    id: <span style=color:#66d9ef>u32</span>,
+</span></span><span style=display:flex><span>    duration_ms: <span style=color:#66d9ef>u64</span>,
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>execute_task</span>(task: <span style=color:#a6e22e>Task</span>) -&gt; String {
+</span></span><span style=display:flex><span>    tokio::time::sleep(Duration::from_millis(task.duration_ms)).<span style=color:#66d9ef>await</span>;
+</span></span><span style=display:flex><span>    format!(<span style=color:#e6db74>&#34;任务 </span><span style=color:#e6db74>{}</span><span style=color:#e6db74> 执行完毕（耗时 </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>ms）&#34;</span>, task.id, task.duration_ms)
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#[tokio::main]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>main</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> (tx, <span style=color:#66d9ef>mut</span> rx) <span style=color:#f92672>=</span> mpsc::channel::<span style=color:#f92672>&lt;</span>Task<span style=color:#f92672>&gt;</span>(<span style=color:#ae81ff>100</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 生产者：提交任务
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> producer <span style=color:#f92672>=</span> tokio::spawn(<span style=color:#66d9ef>async</span> <span style=color:#66d9ef>move</span> {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> tasks <span style=color:#f92672>=</span> vec![
+</span></span><span style=display:flex><span>            Task { id: <span style=color:#ae81ff>1</span>, duration_ms: <span style=color:#ae81ff>300</span> },
+</span></span><span style=display:flex><span>            Task { id: <span style=color:#ae81ff>2</span>, duration_ms: <span style=color:#ae81ff>100</span> },
+</span></span><span style=display:flex><span>            Task { id: <span style=color:#ae81ff>3</span>, duration_ms: <span style=color:#ae81ff>800</span> }, <span style=color:#75715e>// 这个会超时
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>            Task { id: <span style=color:#ae81ff>4</span>, duration_ms: <span style=color:#ae81ff>200</span> },
+</span></span><span style=display:flex><span>        ];
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>for</span> task <span style=color:#66d9ef>in</span> tasks {
+</span></span><span style=display:flex><span>            tx.send(task).<span style=color:#66d9ef>await</span>.unwrap();
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 消费者：并发执行，每个任务超时 500ms
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> consumer <span style=color:#f92672>=</span> tokio::spawn(<span style=color:#66d9ef>async</span> <span style=color:#66d9ef>move</span> {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> set <span style=color:#f92672>=</span> JoinSet::new();
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>while</span> <span style=color:#66d9ef>let</span> Some(task) <span style=color:#f92672>=</span> rx.recv().<span style=color:#66d9ef>await</span> {
+</span></span><span style=display:flex><span>            set.spawn(<span style=color:#66d9ef>async</span> <span style=color:#66d9ef>move</span> {
+</span></span><span style=display:flex><span>                timeout(Duration::from_millis(<span style=color:#ae81ff>500</span>), execute_task(task)).<span style=color:#66d9ef>await</span>
+</span></span><span style=display:flex><span>            });
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// 等待所有任务
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>        <span style=color:#66d9ef>while</span> <span style=color:#66d9ef>let</span> Some(result) <span style=color:#f92672>=</span> set.join_next().<span style=color:#66d9ef>await</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>match</span> result.unwrap() {
+</span></span><span style=display:flex><span>                Ok(msg) <span style=color:#f92672>=&gt;</span> println!(<span style=color:#e6db74>&#34;[完成] </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, msg),
+</span></span><span style=display:flex><span>                Err(_)  <span style=color:#f92672>=&gt;</span> println!(<span style=color:#e6db74>&#34;[超时] 任务超时被取消&#34;</span>),
+</span></span><span style=display:flex><span>            }
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    });
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// select!：等业务完成，或收到 Ctrl+C
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    tokio::select! {
+</span></span><span style=display:flex><span>        _ <span style=color:#f92672>=</span> <span style=color:#66d9ef>async</span> { producer.<span style=color:#66d9ef>await</span>.unwrap(); consumer.<span style=color:#66d9ef>await</span>.unwrap(); } <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>            println!(<span style=color:#e6db74>&#34;所有任务处理完毕，正常退出&#34;</span>);
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>        _ <span style=color:#f92672>=</span> signal::ctrl_c() <span style=color:#f92672>=&gt;</span> {
+</span></span><span style=display:flex><span>            println!(<span style=color:#e6db74>&#34;收到中断信号，优雅退出&#34;</span>);
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><hr><h2 id=小结>小结
+<a class=header-anchor href=#%e5%b0%8f%e7%bb%93></a></h2><ul><li><strong>spawn</strong>：把 async 任务提交给运行时后台执行，返回 <code>JoinHandle</code>，可等待、可取消；需要 <code>'static + Send</code>，借用要改为 <code>move</code> 或 <code>Arc</code></li><li><strong>select!</strong>：同时等多个 Future，谁先完成处理谁；最常用于超时控制和优雅关闭；注意循环内 Future 重新创建的陷阱</li><li><strong>Channel</strong>：<code>mpsc</code> 多生产者单消费者，<code>oneshot</code> 一次性回复，<code>broadcast</code> 广播；Channel 关闭由发送端全部 drop 触发</li><li><strong>Stream</strong>：异步版迭代器，<code>StreamExt</code> 提供 <code>map/filter/collect</code> 等方法；<code>ReceiverStream</code> 可将 mpsc receiver 包装成 Stream</li><li><strong>spawn_blocking</strong>：阻塞操作必须移到专用线程池，否则占用 async 工作线程导致运行时卡顿</li><li><strong>JoinSet</strong>：结构化并发的基础设施，任务生命周期有明确边界，JoinSet drop 时自动取消所有子任务</li></ul><p>下一篇，我们用这些工具组合出生产级的并发模式——生产者/消费者、工作池、优雅关闭的完整实现。</p></div><footer class=post-footer><div class=post-tags><a href=/tags/rust>Rust
+</a><a href=/tags/tokio>Tokio
+</a><a href=/tags/%e5%bc%82%e6%ad%a5>异步
+</a><a href=/tags/%e5%b9%b6%e5%8f%91>并发
+</a><a href=/tags/select>select
+</a><a href=/tags/spawn>spawn</a></div><div class=addthis_inline_share_toolbox style=text-align:center></div><hr><div class=post-copyright><img src=/imgs/cc/cc.svg width=75 height=75 align=right alt=共享知识><ul><li class=post-copyright-title><strong>文章标题：</strong>
+16 | Tokio 实战</li><li class=post-copyright-author><strong>本文作者： </strong>红岩</li><li class=post-copyright-link><strong>本文链接：</strong>
+<a id=post-cr-link href=https://zanehy.github.io/blog/rust-16-tokio-in-practice/ title="16 | Tokio 实战">https://zanehy.github.io/blog/rust-16-tokio-in-practice/</a></li><li class=post-copyright-license><strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <i class="fab fa-fw fa-creative-commons"></i><a target=_blank href=https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh>BY-NC-SA</a> 许可协议。转载请注明出处！</li></ul></div><div class=post-nav><div class="post-nav-next post-nav-item"></div><div class="post-nav-prev post-nav-item"><a href=/blog/rust-15-async-basics/ rel=prev title="15 | Rust 异步编程基础">15 | Rust 异步编程基础
+<i class="fa fa-chevron-right"></i></a></div></div></footer></article></div></div></main><footer class=footer><div class=footer-inner><div class=copyright>&copy;
+<span itemprop=copyrightYear>2024 - 2026
+</span><span class=with-love><i class="fa fa-heart"></i>
+</span><span class=author itemprop=copyrightHolder>红岩</span></div><div class=powered-by>由 <a href=https://gohugo.io title=0.123.7 target=_blank>Hugo</a> & <a href=https://github.com/hugo-next/hugo-theme-next title=4.5.3 target=_blank>Hugo NexT.Gemini</a> 强力驱动</div></div></footer><script type=text/javascript src=https://cdn.staticfile.org/animejs/3.2.1/anime.min.js defer></script><script type=text/javascript src=https://cdn.staticfile.org/viewerjs/1.11.0/viewer.min.js defer></script><script class=next-config data-name=main type=application/json>{"bookmark":{"color":"#888","enable":true,"save":"manual"},"copybtn":true,"darkmode":true,"giscus":{"cfg":{"category":"Comments","categoryid":null,"emit":false,"inputposition":"top","mapping":"title","reactions":false,"repo":"username/repo-name","repoid":null,"theme":"preferred_color_scheme"},"js":"https://giscus.app/client.js"},"hostname":"https://zanehy.github.io/","i18n":{"ds_day":" 天前","ds_days":" 天 ","ds_hour":" 小时前","ds_hours":" 小时 ","ds_just":"刚刚","ds_min":" 分钟前","ds_mins":" 分钟","ds_month":" 个月前","ds_years":" 年 ","empty":"没有找到任何搜索结果：${query}","hits":"找到 ${hits} 个搜索结果","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","placeholder":"搜索..."},"lang":"zh-CN","lazyload":false,"localSearch":{"enable":true,"limit":1e3,"path":"/searchindexes.xml","preload":true,"topnperarticle":-1,"trigger":"auto","unescape":true},"motion":{"async":true,"enable":true,"transition":{"collheader":"fadeInLeft","postblock":"fadeIn","postbody":"fadeInDown","postheader":"fadeInDown","sidebar":"fadeInUp"}},"postmeta":{"comments":{"enable":true,"plugin":"waline"},"views":{"enable":true,"plugin":"busuanzi"}},"root":"/","scheme":"Gemini","sidebar":{"display":"post","offset":12,"padding":18,"position":"left","width":256},"vendor":{"plugins":"qiniu","router":"https://cdn.staticfile.org"},"version":"4.5.3","waline":{"cfg":{"emoji":false,"imguploader":false,"placeholder":"请文明发言哟 ヾ(≧▽≦*)o","reaction":true,"reactiontext":["点赞","踩一下","得意","不屑","尴尬","睡觉"],"reactiontitle":"你认为这篇文章怎么样？","requiredmeta":["nick","mail"],"serverurl":null,"sofa":"快来发表你的意见吧 (≧∀≦)ゞ","wordlimit":200},"css":{"alias":"waline","file":"dist/waline.css","name":"@waline/client","version":"2.13.0"},"js":{"alias":"waline","file":"dist/waline.js","name":"@waline/client","version":"2.13.0"}}}</script><script type=text/javascript src=/js/main.min.0b6f435ab2b781f04f78d578f42b492c126726d94b54a88d0af9aaf3c50c4457.js defer></script></body></html>
