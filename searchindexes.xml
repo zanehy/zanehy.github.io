@@ -1,4 +1,14 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>18 | 宏系统精讲</title><url>/blog/rust-18-macros/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>宏</tag><tag>macro</tag><tag>derive</tag><tag>serde</tag></tags><content type="html"><![CDATA[  前几篇我们一直在用宏，却没有正面解释它：println!、vec!、tokio::select!、#[derive(Debug)]……这些都是宏。这篇我们正面拆解宏系统——它是什么，怎么写，什么时候该用。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>19 | Unsafe Rust 与 FFI：踏入无人监管的领地</title><url>/blog/rust-19-unsafe-ffi/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>unsafe</tag><tag>FFI</tag><tag>C interop</tag><tag>内存安全</tag></tags><content type="html"><![CDATA[  Rust 的招牌卖点是内存安全，但安全是有代价的——借用检查器的规则有时会拦住一些&amp;quot;你知道是对的，但编译器无法证明&amp;quot;的操作。unsafe 就是那把钥匙：打开一扇门，让你进入编译器不再保护的区域。
+这篇文章聊清楚三件事：unsafe 边界在哪里、怎么安全地包装 unsafe、以及如何用 FFI 和 C 库对话。
+unsafe 的本质：不是&amp;quot;危险代码&amp;quot;，是&amp;quot;你担保&amp;quot; 很多人看到 unsafe 关键字就紧张，以为写了 unsafe 代码就一定会崩。这个理解有偏差。
+unsafe 的真实含义是：编译器将验证责任从自己转移给你。Safe Rust 里，编译器能证明内存安全；unsafe 里，编译器说&amp;quot;这段我证明不了，你来担保&amp;quot;。
+你担保的是：这段代码在所有合法调用路径下不会引发未定义行为（Undefined Behavior，UB）。如果你担保错了，程序可能崩溃、数据可能损坏、安全漏洞可能出现——但这是你的责任，不是编译器的。
+一个很重要的认知：unsafe 块只是告诉编译器&amp;quot;这里我负责&amp;quot;，它不会关闭 Rust 的所有检查。生命周期检查、类型检查、借用检查仍然在运行，只是解锁了五个额外操作。
+五件只有 unsafe 才能做的事 Rust 精确划定了 unsafe 的边界：只有以下五类操作需要 unsafe，其他任何操作都是 safe 的。
+1. 解引用裸指针 裸指针（raw pointer）是 *const T 和 *mut T，类似 C 的指针。创建裸指针是 safe 的，但解引用它需要 unsafe：
+fn main() { let x = 42i32; let p: *const i32 = &amp;amp;x; // 创建裸指针，safe // 解引用裸指针，unsafe let val = unsafe { *p }; println!(&amp;#34;{}&amp;#34;, val); // 42 } 为什么解引用需要 unsafe？因为裸指针可能是空指针、悬空指针（指向已释放内存）、未对齐指针，编译器无法在编译期验证这些情况。
+裸指针在哪里会出现？FFI 调用返回的指针、从整数转换的内存地址、手动内存布局。
+2. 调用 unsafe 函数或方法 某些函数被标记为 unsafe …  ]]></content></entry><entry><title>18 | 宏系统精讲</title><url>/blog/rust-18-macros/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>宏</tag><tag>macro</tag><tag>derive</tag><tag>serde</tag></tags><content type="html"><![CDATA[  前几篇我们一直在用宏，却没有正面解释它：println!、vec!、tokio::select!、#[derive(Debug)]……这些都是宏。这篇我们正面拆解宏系统——它是什么，怎么写，什么时候该用。
 Rust 的宏和 C 的 #define 完全不同。C 的宏是文本替换，编译器看不见，调试地狱。Rust 的宏在语法树层面操作，编译器全程参与，类型安全，可调试。
 为什么需要宏 先说宏解决的是什么问题。
 有些代码模式用函数无法优雅表达：
