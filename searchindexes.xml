@@ -1,4 +1,13 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>19 | Unsafe Rust 与 FFI：踏入无人监管的领地</title><url>/blog/rust-19-unsafe-ffi/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>unsafe</tag><tag>FFI</tag><tag>C interop</tag><tag>内存安全</tag></tags><content type="html"><![CDATA[  Rust 的招牌卖点是内存安全，但安全是有代价的——借用检查器的规则有时会拦住一些&amp;quot;你知道是对的，但编译器无法证明&amp;quot;的操作。unsafe 就是那把钥匙：打开一扇门，让你进入编译器不再保护的区域。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><search><entry><title>20 | 项目搭建与路由设计：用 axum 构建任务管理 API</title><url>/blog/rust-20-axum-project-setup/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>axum</tag><tag>tokio</tag><tag>serde</tag><tag>REST API</tag></tags><content type="html"><![CDATA[  前面 19 篇，我们把 Rust 的核心概念逐一拆解：所有权、生命周期、Trait、异步、宏、unsafe……现在到了检验的时候——把这些东西放进一个真实项目，看它们如何协同工作。
+接下来三篇，我们会从零构建一个任务管理 REST API：
+第 20 篇（本篇）：项目搭建、路由设计、请求/响应处理 第 21 篇：统一错误处理、Tower 中间件、优雅关闭 第 22 篇：测试、性能调优、Docker 部署 项目不复杂，但足够覆盖生产级 Rust Web 服务的核心模式。技术栈：axum + tokio + serde + thiserror。
+为什么选 axum Rust 的 Web 框架不少：actix-web、axum、warp、poem……为什么选 axum？
+axum 是 tokio 团队出品，和 tokio 生态天然契合。它的设计哲学很 Rust：把 HTTP 处理拆成组合式的小块，而不是用宏魔法生成代码。路由、提取器、响应——每一层都是普通的 Rust 类型，编译器全程参与检查。
+另一个优势是基于 Tower——一个成熟的中间件生态。日志、超时、限流、CORS，都有现成的 Tower 中间件可以直接插入。
+项目结构 先来规划项目结构。一个清晰的结构在项目生长时会省很多麻烦：
+task-api/ ├── Cargo.toml └── src/ ├── main.rs # 程序入口，启动服务 ├── routes.rs # 路由注册 ├── handlers.rs # 请求处理函数 ├── models.rs # 数据模型（Task 结构体等） ├── store.rs # 内存存储层 └── errors.rs # 统一错误类型（第 21 篇展开） 这个结构遵循&amp;quot;按职责分层&amp;quot;的原则：数据、业务逻辑、HTTP 层各自独立，便于测试和替换。
+初始化项目 cargo new task-api cd task-api Cargo.toml 添加依赖：
+[package] name = &amp;#34;task-api&amp;#34; version = &amp;#34;0.1.0&amp;#34; edition = &amp;#34;2021&amp;#34; [dependencies] axum = &amp;#34;0.7&amp;#34; tokio = { version = …  ]]></content></entry><entry><title>19 | Unsafe Rust 与 FFI：踏入无人监管的领地</title><url>/blog/rust-19-unsafe-ffi/</url><categories><category>Rust</category></categories><tags><tag>Rust</tag><tag>unsafe</tag><tag>FFI</tag><tag>C interop</tag><tag>内存安全</tag></tags><content type="html"><![CDATA[  Rust 的招牌卖点是内存安全，但安全是有代价的——借用检查器的规则有时会拦住一些&amp;quot;你知道是对的，但编译器无法证明&amp;quot;的操作。unsafe 就是那把钥匙：打开一扇门，让你进入编译器不再保护的区域。
 这篇文章聊清楚三件事：unsafe 边界在哪里、怎么安全地包装 unsafe、以及如何用 FFI 和 C 库对话。
 unsafe 的本质：不是&amp;quot;危险代码&amp;quot;，是&amp;quot;你担保&amp;quot; 很多人看到 unsafe 关键字就紧张，以为写了 unsafe 代码就一定会崩。这个理解有偏差。
 unsafe 的真实含义是：编译器将验证责任从自己转移给你。Safe Rust 里，编译器能证明内存安全；unsafe 里，编译器说&amp;quot;这段我证明不了，你来担保&amp;quot;。
