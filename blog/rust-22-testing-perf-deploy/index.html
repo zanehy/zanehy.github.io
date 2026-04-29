@@ -1,0 +1,293 @@
+<!doctype html><html lang=zh-CN data-theme=dark><head><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script><meta charset=UTF-8><meta name=viewport content="width=device-width"><meta name=theme-color content="#222" media="(prefers-color-scheme: dark)"><meta name=generator content="Hugo 0.123.7"><link rel="shortcut icon" type=image/x-icon href=/imgs/icons/zanehy.ico><link rel=icon type=image/x-icon href=/imgs/icons/zanehy.ico><link rel=icon type=image/png sizes=16x16 href=/imgs/icons/zanehy_16x16.jpg><link rel=icon type=image/png sizes=32x32 href=/imgs/icons/zanehy_32_32.jpg><link rel=apple-touch-icon sizes=180x180 href=/imgs/zanehy.jpg><meta itemprop=name content="22 | 测试、性能与部署：把 API 送上生产"><meta itemprop=description content><meta itemprop=datePublished zgotmplz><meta itemprop=dateModified zgotmplz><meta itemprop=image content="http://localhost:1313/imgs/zanehy.jpg"><meta itemprop=keywords content="Rust,axum,测试,Docker,性能优化"><meta property="og:type" content="article"><meta property="og:title" content="22 | 测试、性能与部署：把 API 送上生产"><meta property="og:description" content><meta property="og:image" content="/imgs/zanehy.jpg"><meta property="og:image:width" content="312"><meta property="og:image:height" content="312"><meta property="og:image:type" content="image/jpeg/png/svg/jpg"><meta property="og:url" content="http://localhost:1313/blog/rust-22-testing-perf-deploy/"><meta property="og:site_name" content="红岩 | 个人博客"><meta property="og:locale" content="zh-CN"><meta property="article:author" content="红岩"><meta property="article:published_time" content="2026-04-29 17:37:00 +0800 CST"><meta property="article:modified_time" content="2026-04-29 17:37:00 +0800 CST"><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/font-awesome/6.1.2/css/all.min.css><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/animate.css/3.1.1/animate.min.css><link type=text/css rel=stylesheet href=https://cdn.staticfile.org/viewerjs/1.11.0/viewer.min.css><link rel=stylesheet href=/css/main.css><style type=text/css>.post-footer,.flinks-list-footer hr:after{content:"~ 我可是有底线的哟 ~"}</style><script type=text/javascript>(function(){localDB={set:function(e,t,n){if(n===0)return;const s=new Date,o=n*864e5,i={value:t,expiry:s.getTime()+o};localStorage.setItem(e,JSON.stringify(i))},get:function(e){const t=localStorage.getItem(e);if(!t)return void 0;const n=JSON.parse(t),s=new Date;return s.getTime()>n.expiry?(localStorage.removeItem(e),void 0):n.value}},theme={active:function(){const e=localDB.get("theme");if(e==null)return;theme.toggle(e),window.matchMedia("(prefers-color-scheme: dark)").addListener(function(e){theme.toggle(e.matches?"dark":"light")})},toggle:function(e){document.documentElement.setAttribute("data-theme",e),localDB.set("theme",e,2);const t=document.querySelector("iframe.giscus-frame");if(t){const n={setConfig:{theme:e}};t.contentWindow.postMessage({giscus:n},"https://giscus.app")}}},theme.active()})(window)</script><script class=next-config data-name=page type=application/json>{"comments":false,"isHome":false,"isPage":true,"path":"rust-22-testing-perf-deploy","permalink":"http://localhost:1313/blog/rust-22-testing-perf-deploy/","title":"22 | 测试、性能与部署：把 API 送上生产","waline":{"js":[{"alias":"waline","alias_name":"@waline/client","file":"dist/pageview.js","name":"pageview","version":"2.13.0"},{"alias":"waline","alias_name":"@waline/client","file":"dist/comment.js","name":"comment","version":"2.13.0"}]}}</script><script type=text/javascript>document.addEventListener("DOMContentLoaded",()=>{var e=document.createElement("script");e.charset="UTF-8",e.src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js",e.async=!1,e.defer=!0,document.head.appendChild(e),e.onload=function(){NexT.utils.fmtBusuanzi()}})</script><title>22 | 测试、性能与部署：把 API 送上生产 - 红岩 | 个人博客</title><noscript><link rel=stylesheet href=/css/noscript.css></noscript></head><body itemscope itemtype=http://schema.org/WebPage class=use-motion><div class=headband></div><main class=main><header class=header itemscope itemtype=http://schema.org/WPHeader><div class=header-inner><div class=site-brand-container><div class=site-nav-toggle><div class=toggle aria-label role=button><span class=toggle-line></span>
+<span class=toggle-line></span>
+<span class=toggle-line></span></div></div><div class=site-meta><a href=/ class=brand rel=start><i class=logo-line></i><h1 class=site-title>红岩 | 个人博客</h1><i class=logo-line></i></a><p class=site-subtitle itemprop=description>记录生活，记录成长</p></div><div class=site-nav-right><div class="toggle popup-trigger"><i class="fa fa-search fa-fw fa-lg"></i></div></div></div><nav class=site-nav><ul class="main-menu menu"><li class="menu-item menu-item-home"><a href=/ class=hvr-icon-pulse rel=section><i class="fa fa-home hvr-icon"></i>首页</a></li><li class="menu-item menu-item-about"><a href=/about.html class=hvr-icon-pulse rel=section><i class="fa fa-user hvr-icon"></i>关于</a></li><li class="menu-item menu-item-my_blog"><a href=/blog/ class=hvr-icon-pulse rel=section><i class="fa fa-blog hvr-icon"></i>技术博客</a></li><li class="menu-item menu-item-my_life"><a href=/life/ class=hvr-icon-pulse rel=section><i class="fa fa-pizza-slice hvr-icon"></i>生活点滴</a></li><li class="menu-item menu-item-archives"><a href=/archives/ class=hvr-icon-pulse rel=section><i class="fa fa-archive hvr-icon"></i>归档日志
+<span class=badge>55</span></a></li><li class="menu-item menu-item-search"><a role=button class="popup-trigger hvr-icon-pulse"><i class="fa fa-search fa-fw hvr-icon"></i>搜索</a></li></ul></nav><div class=search-pop-overlay><div class="popup search-popup"><div class=search-header><span class=search-icon><i class="fa fa-search"></i></span><div class=search-input-container><input autocomplete=off autocapitalize=off maxlength=80 placeholder=搜索... spellcheck=false type=search class=search-input></div><span class=popup-btn-close role=button><i class="fa fa-times-circle"></i></span></div><div class="search-result-container no-result"><div class=search-result-icon><i class="fa fa-spinner fa-pulse fa-5x"></i></div></div></div></div></div><div class="toggle sidebar-toggle" role=button><span class=toggle-line></span>
+<span class=toggle-line></span>
+<span class=toggle-line></span></div><aside class=sidebar><div class="sidebar-inner sidebar-nav-active sidebar-toc-active"><ul class=sidebar-nav><li class=sidebar-nav-toc>文章目录</li><li class=sidebar-nav-overview>站点概览</li></ul><div class=sidebar-panel-container><div class="post-toc-wrap sidebar-panel"><div class="post-toc animated"><nav id=TableOfContents><ul><li><a href=#测试>测试</a><ul><li><a href=#单元测试>单元测试</a></li><li><a href=#集成测试>集成测试</a></li></ul></li><li><a href=#编译优化>编译优化</a><ul><li><a href=#基准测试>基准测试</a></li></ul></li><li><a href=#docker-多阶段构建>Docker 多阶段构建</a></li><li><a href=#小结>小结</a></li></ul></nav></div></div><div class="site-overview-wrap sidebar-panel"><div class="site-author site-overview-item animated" itemprop=author itemscope itemtype=http://schema.org/Person><img class=site-author-image itemprop=image alt=红岩 src=/imgs/img-lazy-loading.gif data-src=/imgs/zanehy.jpg><p class=site-author-name itemprop=name>红岩</p><div class=site-description itemprop=description></div></div><div class="site-state-wrap site-overview-item animated"><nav class=site-state><div class="site-state-item site-state-posts"><a href=/archives/><span class=site-state-item-count>55</span>
+<span class=site-state-item-name>日志</span></a></div><div class="site-state-item site-state-categories"><a href=/categories/><span class=site-state-item-count>3</span>
+<span class=site-state-item-name>分类</span></a></div><div class="site-state-item site-state-tags"><a href=/tags/><span class=site-state-item-count>113</span>
+<span class=site-state-item-name>标签</span></a></div></nav></div><div class="links-of-social site-overview-item animated"></div></div></div></div><div id=siteinfo-card-widget class=sidebar-card-widget><div class=item-headline><i class="fas fa-chart-line"></i>
+<span>网站资讯</span></div><div class=siteinfo><div class=siteinfo-item><div class=item-name><i class="fa-solid fa-calendar-check"></i>已运行：</div><div class=item-count id=runTimes data-publishdate=2026-03-04T17:00:00+08:00></div></div><div class=siteinfo-item><div class=item-name><i class="fas fa fa-user"></i>总访客数：</div><div class=item-count id=busuanzi_value_site_uv><i class="fa fa-sync fa-spin"></i></div></div><div class=siteinfo-item><div class=item-name><i class="fas fa fa-eye"></i>页面浏览：</div><div class=item-count id=busuanzi_value_site_pv><i class="fa fa-sync fa-spin"></i></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-font"></i>总字数：</div><div class=item-count id=wordsCount data-count=140747></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-mug-hot"></i>阅读约：</div><div class=item-count id=readTimes data-times=313></div></div><div class=siteinfo-item><div class=item-name><i class="fa fa-clock-rotate-left"></i>最后更新于：</div><div class=item-count id=last-push-date data-lastpushdate=2026-04-29T17:37:00+08:00></div></div></div></div></aside><div class=sidebar-dimmer></div></header><div class=tool-buttons><div id=toggle-theme class=button title=深浅模式切换><i class="fas fa-adjust"></i></div><div class=back-to-top role=button title=返回顶部><i class="fa fa-arrow-up"></i>
+<span>0%</span></div></div><div class=reading-progress-bar></div><a role=button class="book-mark-link book-mark-link-fixed"></a><a href=https://github.com/zanehy rel="noopener external nofollow noreferrer" target=_blank title="Follow me on GitHub" class="exturl github-corner"><svg width="80" height="80" viewBox="0 0 250 250" aria-hidden="true"><path d="M0 0 115 115h15l12 27L250 250V0z"/><path d="M128.3 109C113.8 99.7 119 89.6 119 89.6 122 82.7 120.5 78.6 120.5 78.6 119.2 72 123.4 76.3 123.4 76.3 127.3 80.9 125.5 87.3 125.5 87.3 122.9 97.6 130.6 101.9 134.4 103.2" fill="currentcolor" style="transform-origin:130px 106px" class="octo-arm"/><path d="M115 115C114.9 115.1 118.7 116.5 119.8 115.4l13.9-13.8C136.9 99.2 139.9 98.4 142.2 98.6 133.8 88 127.5 74.4 143.8 58 148.5 53.4 154 51.2 159.7 51 160.3 49.4 163.2 43.6 171.4 40.1 171.4 40.1 176.1 42.5 178.8 56.2 183.1 58.6 187.2 61.8 190.9 65.4 194.5 69 197.7 73.2 200.1 77.6 213.8 80.2 216.3 84.9 216.3 84.9 212.7 93.1 206.9 96 205.4 96.6 205.1 102.4 203 107.8 198.3 112.5 181.9 128.9 168.3 122.5 157.7 114.1 157.9 116.9 156.7 120.9 152.7 124.9L141 136.5C139.8 137.7 141.6 141.9 141.8 141.8z" fill="currentcolor" class="octo-body"/></svg>
+</a><script type=text/javascript src=//sidecar.gitter.im/dist/sidecar.v1.js async></script><script type=text/javascript>((window.gitter={}).chat={}).options={room:"hugo-next/community"}</script><noscript><div class=noscript-warning>Theme NexT works best with JavaScript enabled</div></noscript><div class="main-inner post posts-expand"><div class=post-block><article itemscope itemtype=http://schema.org/Article class=post-content lang><link itemprop=mainEntityOfPage href=http://localhost:1313/blog/rust-22-testing-perf-deploy/><span hidden itemprop=author itemscope itemtype=http://schema.org/Person><meta itemprop=image content="/imgs/zanehy.jpg"><meta itemprop=name content="红岩"></span><span hidden itemprop=publisher itemscope itemtype=http://schema.org/Organization><meta itemprop=name content="红岩"><meta itemprop=description content></span><span hidden itemprop=post itemscope itemtype=http://schema.org/CreativeWork><meta itemprop=name content="22 | 测试、性能与部署：把 API 送上生产"><meta itemprop=description content="三篇实战项目的最后一篇。前两篇把 task-api 从骨架搭到具备生产级错误处理和中间件，这一篇补上最后三块拼图：测试、性能调优和Docker 部署。 测试 Rust 的测"></span><header class=post-header><h1 class=post-title itemprop="name headline">22 | 测试、性能与部署：把 API 送上生产</h1><div class=post-meta-container><div class=post-meta-items><span class=post-meta-item><span class=post-meta-item-icon><i class="far fa-calendar"></i>
+</span><span class=post-meta-item-text title=发表于>发表于：
+</span><time title="创建时间：2026-04-29 17:37:00 +0800 CST" itemprop="dateCreated datePublished" datetime="2026-04-29 17:37:00 +0800 CST">2026-04-29
+</time></span><span class=post-meta-item><span class=post-meta-item-icon><i class="far fa-folder-open"></i>
+</span><span class=post-meta-item-text title=分类于>分类于：
+</span><span itemprop=about itemscope itemtype=http://schema.org/Thing><a href=/categories/rust itemprop=url rel=index><span itemprop=name>Rust</span></a></span></span></div><div class=post-meta-items><span class=post-meta-item title=字数><span class=post-meta-item-icon><i class="far fa-file-word"></i>
+</span><span class=post-meta-item-text>字数：</span>
+<span>2564</span>
+</span><span class=post-meta-item title=阅读><span class=post-meta-item-icon><i class="far fa-clock"></i>
+</span><span class=post-meta-item-text>阅读：&ap;</span>
+<span>6分钟</span>
+</span><span class=post-meta-item title=浏览><span class=post-meta-item-icon><i class="far fa-eye"></i>
+</span><span class=post-meta-item-text>浏览：
+</span><span id=busuanzi_value_page_pv data-path=/blog/rust-22-testing-perf-deploy/><i class="fa fa-sync fa-spin"></i></span></span></div></div></header><div class="post-body autonumber" itemprop=articleBody><p>三篇实战项目的最后一篇。前两篇把 task-api 从骨架搭到具备生产级错误处理和中间件，这一篇补上最后三块拼图：<strong>测试</strong>、<strong>性能调优</strong>和<strong>Docker 部署</strong>。</p><h2 id=测试>测试
+<a class=header-anchor href=#%e6%b5%8b%e8%af%95></a></h2><p>Rust 的测试体系是内置的，不需要额外的测试框架。<code>cargo test</code> 直接运行，编译器帮你检查测试代码的类型安全。</p><h3 id=单元测试>单元测试
+<a class=header-anchor href=#%e5%8d%95%e5%85%83%e6%b5%8b%e8%af%95></a></h3><p>单元测试放在被测模块的同一文件里，用 <code>#[cfg(test)]</code> 模块包裹：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#75715e>// src/store.rs 末尾追加
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#[cfg(test)]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>mod</span> tests {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>use</span> <span style=color:#66d9ef>super</span>::<span style=color:#f92672>*</span>;
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>use</span> <span style=color:#66d9ef>crate</span>::models::{Task, TaskStatus, UpdateTaskRequest};
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>make_store</span>() -&gt; <span style=color:#a6e22e>TaskStore</span> {
+</span></span><span style=display:flex><span>        TaskStore::new()
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>#[test]</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>test_create_and_get</span>() {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> store <span style=color:#f92672>=</span> make_store();
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> task <span style=color:#f92672>=</span> Task::new(<span style=color:#e6db74>&#34;写测试&#34;</span>.to_string(), None);
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> id <span style=color:#f92672>=</span> task.id;
+</span></span><span style=display:flex><span>        store.create(task);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> found <span style=color:#f92672>=</span> store.get(<span style=color:#f92672>&amp;</span>id).unwrap();
+</span></span><span style=display:flex><span>        assert_eq!(found.title, <span style=color:#e6db74>&#34;写测试&#34;</span>);
+</span></span><span style=display:flex><span>        assert_eq!(found.status, TaskStatus::Todo);
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>#[test]</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>test_update_task</span>() {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> store <span style=color:#f92672>=</span> make_store();
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> task <span style=color:#f92672>=</span> Task::new(<span style=color:#e6db74>&#34;原标题&#34;</span>.to_string(), None);
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> id <span style=color:#f92672>=</span> task.id;
+</span></span><span style=display:flex><span>        store.create(task);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> req <span style=color:#f92672>=</span> UpdateTaskRequest {
+</span></span><span style=display:flex><span>            title: Some(<span style=color:#e6db74>&#34;新标题&#34;</span>.to_string()),
+</span></span><span style=display:flex><span>            description: None,
+</span></span><span style=display:flex><span>            status: Some(TaskStatus::Done),
+</span></span><span style=display:flex><span>        };
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> updated <span style=color:#f92672>=</span> store.update(<span style=color:#f92672>&amp;</span>id, req).unwrap();
+</span></span><span style=display:flex><span>        assert_eq!(updated.title, <span style=color:#e6db74>&#34;新标题&#34;</span>);
+</span></span><span style=display:flex><span>        assert_eq!(updated.status, TaskStatus::Done);
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>#[test]</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>test_delete_task</span>() {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> store <span style=color:#f92672>=</span> make_store();
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> task <span style=color:#f92672>=</span> Task::new(<span style=color:#e6db74>&#34;待删除&#34;</span>.to_string(), None);
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> id <span style=color:#f92672>=</span> task.id;
+</span></span><span style=display:flex><span>        store.create(task);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        assert!(store.delete(<span style=color:#f92672>&amp;</span>id));
+</span></span><span style=display:flex><span>        assert!(store.get(<span style=color:#f92672>&amp;</span>id).is_none());
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// 再次删除应返回 false
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>        assert!(<span style=color:#f92672>!</span>store.delete(<span style=color:#f92672>&amp;</span>id));
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>#[test]</span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>test_list_sorted_by_created_at</span>() {
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> store <span style=color:#f92672>=</span> make_store();
+</span></span><span style=display:flex><span>        <span style=color:#75715e>// 快速插入两个任务，chrono 精度足够区分
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>        store.create(Task::new(<span style=color:#e6db74>&#34;第一个&#34;</span>.to_string(), None));
+</span></span><span style=display:flex><span>        std::thread::sleep(std::time::Duration::from_millis(<span style=color:#ae81ff>5</span>));
+</span></span><span style=display:flex><span>        store.create(Task::new(<span style=color:#e6db74>&#34;第二个&#34;</span>.to_string(), None));
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#66d9ef>let</span> tasks <span style=color:#f92672>=</span> store.list();
+</span></span><span style=display:flex><span>        assert_eq!(tasks[<span style=color:#ae81ff>0</span>].title, <span style=color:#e6db74>&#34;第一个&#34;</span>);
+</span></span><span style=display:flex><span>        assert_eq!(tasks[<span style=color:#ae81ff>1</span>].title, <span style=color:#e6db74>&#34;第二个&#34;</span>);
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p><code>#[cfg(test)]</code> 让这段代码只在 <code>cargo test</code> 时编译，不会进入生产二进制。<code>make_store()</code> 是测试辅助函数，避免每个测试重复初始化。</p><h3 id=集成测试>集成测试
+<a class=header-anchor href=#%e9%9b%86%e6%88%90%e6%b5%8b%e8%af%95></a></h3><p>集成测试放在 <code>tests/</code> 目录下，测试的是对外暴露的 HTTP 接口，更接近真实使用场景。axum 提供了 <code>axum::body::to_bytes</code> 和 <code>tower::ServiceExt</code> 来在不启动真实 HTTP server 的情况下测试路由。</p><p>集成测试通过 crate 名引用项目模块，因此需要先把公共模块暴露为库。在 <code>src/lib.rs</code> 里添加：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#75715e>// src/lib.rs
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span><span style=color:#66d9ef>pub</span> <span style=color:#66d9ef>mod</span> errors;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>pub</span> <span style=color:#66d9ef>mod</span> handlers;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>pub</span> <span style=color:#66d9ef>mod</span> models;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>pub</span> <span style=color:#66d9ef>mod</span> routes;
+</span></span><span style=display:flex><span><span style=color:#66d9ef>pub</span> <span style=color:#66d9ef>mod</span> store;
+</span></span></code></pre></div><p><code>main.rs</code> 里把原来的 <code>mod</code> 声明全部改成 <code>use task_api::*</code> 风格引用即可，或者直接保留 <code>mod</code> 声明——Rust 允许 <code>main.rs</code> 和 <code>lib.rs</code> 并存，两者共享同一套源文件，互不冲突。</p><p>然后新建 <code>tests/api_test.rs</code>：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#75715e>// tests/api_test.rs
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>use</span> axum::{
+</span></span><span style=display:flex><span>    body::Body,
+</span></span><span style=display:flex><span>    http::{Request, StatusCode},
+</span></span><span style=display:flex><span>};
+</span></span><span style=display:flex><span><span style=color:#66d9ef>use</span> serde_json::{json, Value};
+</span></span><span style=display:flex><span><span style=color:#66d9ef>use</span> std::sync::{Arc, RwLock};
+</span></span><span style=display:flex><span><span style=color:#66d9ef>use</span> task_api::{routes, store::TaskStore};
+</span></span><span style=display:flex><span><span style=color:#66d9ef>use</span> tower::ServiceExt; <span style=color:#75715e>// 提供 .oneshot() 方法
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>test_app</span>() -&gt; <span style=color:#a6e22e>axum</span>::Router {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> store <span style=color:#f92672>=</span> Arc::new(RwLock::new(TaskStore::new()));
+</span></span><span style=display:flex><span>    routes::create_router(store)
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#[tokio::test]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>test_create_and_list_tasks</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> app <span style=color:#f92672>=</span> test_app();
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 创建任务
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> create_resp <span style=color:#f92672>=</span> app
+</span></span><span style=display:flex><span>        .clone()
+</span></span><span style=display:flex><span>        .oneshot(
+</span></span><span style=display:flex><span>            Request::builder()
+</span></span><span style=display:flex><span>                .method(<span style=color:#e6db74>&#34;POST&#34;</span>)
+</span></span><span style=display:flex><span>                .uri(<span style=color:#e6db74>&#34;/tasks&#34;</span>)
+</span></span><span style=display:flex><span>                .header(<span style=color:#e6db74>&#34;content-type&#34;</span>, <span style=color:#e6db74>&#34;application/json&#34;</span>)
+</span></span><span style=display:flex><span>                .body(Body::from(
+</span></span><span style=display:flex><span>                    serde_json::to_string(<span style=color:#f92672>&amp;</span>json!({<span style=color:#e6db74>&#34;title&#34;</span>: <span style=color:#e6db74>&#34;集成测试任务&#34;</span>})).unwrap(),
+</span></span><span style=display:flex><span>                ))
+</span></span><span style=display:flex><span>                .unwrap(),
+</span></span><span style=display:flex><span>        )
+</span></span><span style=display:flex><span>        .<span style=color:#66d9ef>await</span>
+</span></span><span style=display:flex><span>        .unwrap();
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    assert_eq!(create_resp.status(), StatusCode::<span style=color:#66d9ef>CREATED</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> body <span style=color:#f92672>=</span> axum::body::to_bytes(create_resp.into_body(), <span style=color:#66d9ef>usize</span>::<span style=color:#66d9ef>MAX</span>)
+</span></span><span style=display:flex><span>        .<span style=color:#66d9ef>await</span>
+</span></span><span style=display:flex><span>        .unwrap();
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> task: <span style=color:#a6e22e>Value</span> <span style=color:#f92672>=</span> serde_json::from_slice(<span style=color:#f92672>&amp;</span>body).unwrap();
+</span></span><span style=display:flex><span>    assert_eq!(task[<span style=color:#e6db74>&#34;title&#34;</span>], <span style=color:#e6db74>&#34;集成测试任务&#34;</span>);
+</span></span><span style=display:flex><span>    assert_eq!(task[<span style=color:#e6db74>&#34;status&#34;</span>], <span style=color:#e6db74>&#34;todo&#34;</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// 列出任务
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> list_resp <span style=color:#f92672>=</span> test_app()
+</span></span><span style=display:flex><span>        .oneshot(Request::builder().uri(<span style=color:#e6db74>&#34;/tasks&#34;</span>).body(Body::empty()).unwrap())
+</span></span><span style=display:flex><span>        .<span style=color:#66d9ef>await</span>
+</span></span><span style=display:flex><span>        .unwrap();
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    assert_eq!(list_resp.status(), StatusCode::<span style=color:#66d9ef>OK</span>);
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> body <span style=color:#f92672>=</span> axum::body::to_bytes(list_resp.into_body(), <span style=color:#66d9ef>usize</span>::<span style=color:#66d9ef>MAX</span>)
+</span></span><span style=display:flex><span>        .<span style=color:#66d9ef>await</span>
+</span></span><span style=display:flex><span>        .unwrap();
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> tasks: <span style=color:#a6e22e>Value</span> <span style=color:#f92672>=</span> serde_json::from_slice(<span style=color:#f92672>&amp;</span>body).unwrap();
+</span></span><span style=display:flex><span>    assert!(tasks.as_array().unwrap().len() <span style=color:#f92672>&gt;=</span> <span style=color:#ae81ff>1</span>);
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#75715e>#[tokio::test]</span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>async</span> <span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>test_get_nonexistent_task</span>() {
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> app <span style=color:#f92672>=</span> test_app();
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> resp <span style=color:#f92672>=</span> app
+</span></span><span style=display:flex><span>        .oneshot(
+</span></span><span style=display:flex><span>            Request::builder()
+</span></span><span style=display:flex><span>                .uri(<span style=color:#e6db74>&#34;/tasks/00000000-0000-0000-0000-000000000000&#34;</span>)
+</span></span><span style=display:flex><span>                .body(Body::empty())
+</span></span><span style=display:flex><span>                .unwrap(),
+</span></span><span style=display:flex><span>        )
+</span></span><span style=display:flex><span>        .<span style=color:#66d9ef>await</span>
+</span></span><span style=display:flex><span>        .unwrap();
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    assert_eq!(resp.status(), StatusCode::<span style=color:#66d9ef>NOT_FOUND</span>);
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> body <span style=color:#f92672>=</span> axum::body::to_bytes(resp.into_body(), <span style=color:#66d9ef>usize</span>::<span style=color:#66d9ef>MAX</span>)
+</span></span><span style=display:flex><span>        .<span style=color:#66d9ef>await</span>
+</span></span><span style=display:flex><span>        .unwrap();
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>let</span> error: <span style=color:#a6e22e>Value</span> <span style=color:#f92672>=</span> serde_json::from_slice(<span style=color:#f92672>&amp;</span>body).unwrap();
+</span></span><span style=display:flex><span>    assert_eq!(error[<span style=color:#e6db74>&#34;code&#34;</span>], <span style=color:#e6db74>&#34;NOT_FOUND&#34;</span>);
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p><code>.oneshot()</code> 把一个请求发进路由，得到响应，整个过程在内存里完成，速度极快，也不需要绑定端口。这是测试 axum 应用的标准方式。</p><p>运行测试：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-bash data-lang=bash><span style=display:flex><span>cargo test                    <span style=color:#75715e># 跑所有测试</span>
+</span></span><span style=display:flex><span>cargo test test_create        <span style=color:#75715e># 只跑名字含 test_create 的测试</span>
+</span></span><span style=display:flex><span>cargo test -- --nocapture     <span style=color:#75715e># 显示测试中的 println! 输出</span>
+</span></span></code></pre></div><h2 id=编译优化>编译优化
+<a class=header-anchor href=#%e7%bc%96%e8%af%91%e4%bc%98%e5%8c%96></a></h2><p>Rust 的 <code>cargo build</code> 默认是 debug 模式——编译快，运行慢（未优化，带调试信息）。发布时要用 <code>--release</code>：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-bash data-lang=bash><span style=display:flex><span>cargo build --release
+</span></span></code></pre></div><p>release 二进制在 <code>target/release/</code> 下，体积和性能都与 debug 差异显著。可以在 <code>Cargo.toml</code> 里进一步调整 release profile：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-toml data-lang=toml><span style=display:flex><span>[<span style=color:#a6e22e>profile</span>.<span style=color:#a6e22e>release</span>]
+</span></span><span style=display:flex><span><span style=color:#a6e22e>opt-level</span> = <span style=color:#ae81ff>3</span>        <span style=color:#75715e># 最高优化级别（默认就是 3）</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>lto</span> = <span style=color:#66d9ef>true</span>           <span style=color:#75715e># 链接时优化，跨 crate 内联，显著减小体积</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>codegen-units</span> = <span style=color:#ae81ff>1</span>    <span style=color:#75715e># 单个代码生成单元，允许更激进的优化（编译慢但结果更优）</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>strip</span> = <span style=color:#66d9ef>true</span>         <span style=color:#75715e># 剥离符号表，进一步减小二进制体积</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>panic</span> = <span style=color:#e6db74>&#34;abort&#34;</span>      <span style=color:#75715e># panic 时直接终止而不展开栈，减小体积</span>
+</span></span></code></pre></div><p><code>lto = true</code> 对 Rust 项目效果明显——axum 这类框架有大量跨 crate 的小函数，LTO 可以把它们内联掉，同时消除死代码。实测开启 LTO 后，简单 axum 项目的二进制可以从 ~8MB 缩减到 ~3MB。</p><h3 id=基准测试>基准测试
+<a class=header-anchor href=#%e5%9f%ba%e5%87%86%e6%b5%8b%e8%af%95></a></h3><p><code>cargo bench</code> 是内置的基准测试工具，需要配合 <code>#[bench]</code> 属性（目前稳定版只支持 criterion 这类第三方库）。加入 criterion：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-toml data-lang=toml><span style=display:flex><span>[<span style=color:#a6e22e>dev-dependencies</span>]
+</span></span><span style=display:flex><span><span style=color:#a6e22e>criterion</span> = { <span style=color:#a6e22e>version</span> = <span style=color:#e6db74>&#34;0.5&#34;</span>, <span style=color:#a6e22e>features</span> = [<span style=color:#e6db74>&#34;html_reports&#34;</span>] }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>[[<span style=color:#a6e22e>bench</span>]]
+</span></span><span style=display:flex><span><span style=color:#a6e22e>name</span> = <span style=color:#e6db74>&#34;store_bench&#34;</span>
+</span></span><span style=display:flex><span><span style=color:#a6e22e>harness</span> = <span style=color:#66d9ef>false</span>
+</span></span></code></pre></div><p><code>benches/store_bench.rs</code>：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-rust data-lang=rust><span style=display:flex><span><span style=color:#66d9ef>use</span> criterion::{black_box, criterion_group, criterion_main, Criterion};
+</span></span><span style=display:flex><span><span style=color:#66d9ef>use</span> task_api::{models::Task, store::TaskStore};
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>bench_create_tasks</span>(c: <span style=color:#66d9ef>&amp;</span><span style=color:#a6e22e>mut</span> Criterion) {
+</span></span><span style=display:flex><span>    c.bench_function(<span style=color:#e6db74>&#34;store_create_1000&#34;</span>, <span style=color:#f92672>|</span>b<span style=color:#f92672>|</span> {
+</span></span><span style=display:flex><span>        b.iter(<span style=color:#f92672>||</span> {
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> store <span style=color:#f92672>=</span> TaskStore::new();
+</span></span><span style=display:flex><span>            <span style=color:#66d9ef>for</span> i <span style=color:#66d9ef>in</span> <span style=color:#ae81ff>0</span><span style=color:#f92672>..</span><span style=color:#ae81ff>1000</span> {
+</span></span><span style=display:flex><span>                <span style=color:#66d9ef>let</span> task <span style=color:#f92672>=</span> Task::new(format!(<span style=color:#e6db74>&#34;任务 </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, i), None);
+</span></span><span style=display:flex><span>                store.create(black_box(task));
+</span></span><span style=display:flex><span>            }
+</span></span><span style=display:flex><span>        })
+</span></span><span style=display:flex><span>    });
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>fn</span> <span style=color:#a6e22e>bench_list_tasks</span>(c: <span style=color:#66d9ef>&amp;</span><span style=color:#a6e22e>mut</span> Criterion) {
+</span></span><span style=display:flex><span>    <span style=color:#75715e>// store 在 bench_function 外初始化，测的是固定 1000 条数据的 list 性能
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#75715e>// 注意：如果你想测 create 的性能，必须在 b.iter 里面创建新 store
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#75715e>// 否则每次迭代都是往越来越大的 HashMap 插入，测到的是不断增长的性能曲线
+</span></span></span><span style=display:flex><span><span style=color:#75715e></span>    <span style=color:#66d9ef>let</span> <span style=color:#66d9ef>mut</span> store <span style=color:#f92672>=</span> TaskStore::new();
+</span></span><span style=display:flex><span>    <span style=color:#66d9ef>for</span> i <span style=color:#66d9ef>in</span> <span style=color:#ae81ff>0</span><span style=color:#f92672>..</span><span style=color:#ae81ff>1000</span> {
+</span></span><span style=display:flex><span>        store.create(Task::new(format!(<span style=color:#e6db74>&#34;任务 </span><span style=color:#e6db74>{}</span><span style=color:#e6db74>&#34;</span>, i), None));
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    c.bench_function(<span style=color:#e6db74>&#34;store_list_1000&#34;</span>, <span style=color:#f92672>|</span>b<span style=color:#f92672>|</span> {
+</span></span><span style=display:flex><span>        b.iter(<span style=color:#f92672>||</span> {
+</span></span><span style=display:flex><span>            black_box(store.list());
+</span></span><span style=display:flex><span>        })
+</span></span><span style=display:flex><span>    });
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>criterion_group!(benches, bench_create_tasks, bench_list_tasks);
+</span></span><span style=display:flex><span>criterion_main!(benches);
+</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-bash data-lang=bash><span style=display:flex><span>cargo bench
+</span></span></code></pre></div><p>criterion 会多次运行并统计均值、标准差，生成 HTML 报告。<code>black_box</code> 防止编译器把基准测试的计算优化掉，确保结果真实。</p><h2 id=docker-多阶段构建>Docker 多阶段构建
+<a class=header-anchor href=#docker-%e5%a4%9a%e9%98%b6%e6%ae%b5%e6%9e%84%e5%bb%ba></a></h2><p>Rust 的编译镜像很大（官方 <code>rust:latest</code> 约 1.5GB），但运行时只需要一个静态链接的二进制。多阶段构建就是为了解决这个问题：编译阶段用大镜像，运行阶段用最小镜像。</p><p><code>Dockerfile</code>：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-dockerfile data-lang=dockerfile><span style=display:flex><span><span style=color:#75715e># ---- 构建阶段 ----</span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>FROM</span><span style=color:#e6db74> rust:1.77-slim AS builder</span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>WORKDIR</span><span style=color:#e6db74> /app</span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#75715e># 先复制依赖文件，利用 Docker 层缓存</span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#75715e># 只有 Cargo.toml/Cargo.lock 变化时才重新下载依赖</span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>COPY</span> Cargo.toml Cargo.lock ./<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#75715e># 创建空 main，让依赖先编译缓存</span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>RUN</span> mkdir src <span style=color:#f92672>&amp;&amp;</span> echo <span style=color:#e6db74>&#34;fn main() {}&#34;</span> &gt; src/main.rs<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>RUN</span> cargo build --release<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>RUN</span> rm -f target/release/deps/task_api*<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#75715e># 复制真正的源码并编译</span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>COPY</span> src ./src<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>RUN</span> cargo build --release<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#75715e># ---- 运行阶段 ----</span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>FROM</span><span style=color:#e6db74> debian:bookworm-slim AS runtime</span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#75715e># 安装运行时依赖（动态链接的 glibc、SSL）</span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>RUN</span> apt-get update <span style=color:#f92672>&amp;&amp;</span> apt-get install -y <span style=color:#ae81ff>\
+</span></span></span><span style=display:flex><span><span style=color:#ae81ff></span>    ca-certificates <span style=color:#ae81ff>\
+</span></span></span><span style=display:flex><span><span style=color:#ae81ff></span>    <span style=color:#f92672>&amp;&amp;</span> rm -rf /var/lib/apt/lists/*<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>WORKDIR</span><span style=color:#e6db74> /app</span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#75715e># 只从构建阶段复制二进制</span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>COPY</span> --from<span style=color:#f92672>=</span>builder /app/target/release/task-api .<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>EXPOSE</span><span style=color:#e6db74> 3000</span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>ENV</span> RUST_LOG<span style=color:#f92672>=</span>info
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#66d9ef>CMD</span> [<span style=color:#e6db74>&#34;./task-api&#34;</span>]<span style=color:#960050;background-color:#1e0010>
+</span></span></span></code></pre></div><p>这个 Dockerfile 有几个值得注意的技巧：</p><p><strong>依赖缓存层</strong>：先复制 <code>Cargo.toml</code> 和 <code>Cargo.lock</code>，用空 <code>main.rs</code> 触发依赖编译。依赖不变时，这一层会命中缓存，只重新编译你的源码，大幅缩短 CI 时间。</p><p><strong>最终镜像用 <code>debian:bookworm-slim</code></strong>：比 <code>scratch</code>（完全空镜像）更实用——有 shell 方便调试，有 glibc 兼容大多数动态链接。如果想要更小，可以用 <code>musl</code> target 编译静态二进制再配 <code>scratch</code>：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-dockerfile data-lang=dockerfile><span style=display:flex><span><span style=color:#66d9ef>FROM</span><span style=color:#e6db74> rust:1.77-slim AS builder</span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>RUN</span> rustup target add x86_64-unknown-linux-musl<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>RUN</span> apt-get update <span style=color:#f92672>&amp;&amp;</span> apt-get install -y musl-tools<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#75715e># ...</span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>RUN</span> cargo build --release --target x86_64-unknown-linux-musl<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>FROM</span><span style=color:#e6db74> scratch AS runtime</span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>COPY</span> --from<span style=color:#f92672>=</span>builder /app/target/x86_64-unknown-linux-musl/release/task-api /task-api<span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>EXPOSE</span><span style=color:#e6db74> 3000</span><span style=color:#960050;background-color:#1e0010>
+</span></span></span><span style=display:flex><span><span style=color:#960050;background-color:#1e0010></span><span style=color:#66d9ef>CMD</span> [<span style=color:#e6db74>&#34;/task-api&#34;</span>]<span style=color:#960050;background-color:#1e0010>
+</span></span></span></code></pre></div><p><code>scratch</code> 镜像只有二进制本身，最终镜像可以压缩到 10MB 以内。</p><p>构建和运行：</p><div class=highlight><pre tabindex=0 style=color:#f8f8f2;background-color:#272822;-moz-tab-size:2;-o-tab-size:2;tab-size:2><code class=language-bash data-lang=bash><span style=display:flex><span>docker build -t task-api .
+</span></span><span style=display:flex><span>docker run -p 3000:3000 -e RUST_LOG<span style=color:#f92672>=</span>debug task-api
+</span></span></code></pre></div><h2 id=小结>小结
+<a class=header-anchor href=#%e5%b0%8f%e7%bb%93></a></h2><p>这三篇走完了一个 Rust Web 服务从零到上线的完整路径：</p><table><thead><tr><th>篇</th><th>内容</th></tr></thead><tbody><tr><td>第 20 篇</td><td>项目结构、数据模型、Handler、路由注册、服务启动</td></tr><tr><td>第 21 篇</td><td>统一错误处理、Tower 中间件、优雅关闭</td></tr><tr><td>第 22 篇</td><td>单元测试、集成测试、release 优化、Docker 部署</td></tr></tbody></table><p>回过头看，Rust 在 Web 开发上的体验和 Go 相比确实更陡峭——类型系统更严格、借用检查需要适应、编译时间更长。但收益也是真实的：运行时几乎没有意外，内存安全由编译器保证，性能天花板更高。</p><p>整个系列到这里正式收尾。番外篇会做一个生态全景扫描，告诉你"接下来去哪"。</p></div><footer class=post-footer><div class=post-tags><a href=/tags/rust>Rust
+</a><a href=/tags/axum>axum
+</a><a href=/tags/%e6%b5%8b%e8%af%95>测试
+</a><a href=/tags/docker>Docker
+</a><a href=/tags/%e6%80%a7%e8%83%bd%e4%bc%98%e5%8c%96>性能优化</a></div><div class=addthis_inline_share_toolbox style=text-align:center></div><hr><div class=post-copyright><img src=/imgs/cc/cc.svg width=75 height=75 align=right alt=共享知识><ul><li class=post-copyright-title><strong>文章标题：</strong>
+22 | 测试、性能与部署：把 API 送上生产</li><li class=post-copyright-author><strong>本文作者： </strong>红岩</li><li class=post-copyright-link><strong>本文链接：</strong>
+<a id=post-cr-link href=http://localhost:1313/blog/rust-22-testing-perf-deploy/ title="22 | 测试、性能与部署：把 API 送上生产">http://localhost:1313/blog/rust-22-testing-perf-deploy/</a></li><li class=post-copyright-license><strong>版权声明： </strong>本博客所有文章除特别声明外，均采用 <i class="fab fa-fw fa-creative-commons"></i><a target=_blank href=https://creativecommons.org/licenses/by-nc-sa/4.0/deed.zh>BY-NC-SA</a> 许可协议。转载请注明出处！</li></ul></div><div class=post-nav><div class="post-nav-next post-nav-item"></div><div class="post-nav-prev post-nav-item"><a href=/blog/rust-21-error-handling-middleware/ rel=prev title="21 | 错误处理与中间件：让 API 更健壮">21 | 错误处理与中间件：让 API 更健壮
+<i class="fa fa-chevron-right"></i></a></div></div></footer></article></div></div></main><footer class=footer><div class=footer-inner><div class=copyright>&copy;
+<span itemprop=copyrightYear>2024 - 2026
+</span><span class=with-love><i class="fa fa-heart"></i>
+</span><span class=author itemprop=copyrightHolder>红岩</span></div><div class=powered-by>由 <a href=https://gohugo.io title=0.123.7 target=_blank>Hugo</a> & <a href=https://github.com/hugo-next/hugo-theme-next title=4.5.3 target=_blank>Hugo NexT.Gemini</a> 强力驱动</div></div></footer><script type=text/javascript src=https://cdn.staticfile.org/animejs/3.2.1/anime.min.js defer></script><script type=text/javascript src=https://cdn.staticfile.org/viewerjs/1.11.0/viewer.min.js defer></script><script class=next-config data-name=main type=application/json>{"bookmark":{"color":"#888","enable":true,"save":"manual"},"copybtn":true,"darkmode":true,"giscus":{"cfg":{"category":"Comments","categoryid":null,"emit":false,"inputposition":"top","mapping":"title","reactions":false,"repo":"username/repo-name","repoid":null,"theme":"preferred_color_scheme"},"js":"https://giscus.app/client.js"},"hostname":"http://localhost:1313/","i18n":{"ds_day":" 天前","ds_days":" 天 ","ds_hour":" 小时前","ds_hours":" 小时 ","ds_just":"刚刚","ds_min":" 分钟前","ds_mins":" 分钟","ds_month":" 个月前","ds_years":" 年 ","empty":"没有找到任何搜索结果：${query}","hits":"找到 ${hits} 个搜索结果","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","placeholder":"搜索..."},"lang":"zh-CN","lazyload":false,"localSearch":{"enable":true,"limit":1e3,"path":"/searchindexes.xml","preload":true,"topnperarticle":-1,"trigger":"auto","unescape":true},"motion":{"async":true,"enable":true,"transition":{"collheader":"fadeInLeft","postblock":"fadeIn","postbody":"fadeInDown","postheader":"fadeInDown","sidebar":"fadeInUp"}},"postmeta":{"comments":{"enable":true,"plugin":"waline"},"views":{"enable":true,"plugin":"busuanzi"}},"root":"/","scheme":"Gemini","sidebar":{"display":"post","offset":12,"padding":18,"position":"left","width":256},"vendor":{"plugins":"qiniu","router":"https://cdn.staticfile.org"},"version":"4.5.3","waline":{"cfg":{"emoji":false,"imguploader":false,"placeholder":"请文明发言哟 ヾ(≧▽≦*)o","reaction":true,"reactiontext":["点赞","踩一下","得意","不屑","尴尬","睡觉"],"reactiontitle":"你认为这篇文章怎么样？","requiredmeta":["nick","mail"],"serverurl":null,"sofa":"快来发表你的意见吧 (≧∀≦)ゞ","wordlimit":200},"css":{"alias":"waline","file":"dist/waline.css","name":"@waline/client","version":"2.13.0"},"js":{"alias":"waline","file":"dist/waline.js","name":"@waline/client","version":"2.13.0"}}}</script><script type=text/javascript src=/js/main.js defer></script></body></html>
